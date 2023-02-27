@@ -1,0 +1,2 @@
+learning_rate,n_filters_l1,n_filters_l2,tmfg_confidence,tmfg_iterations,tmfg_similarity,execution_time,number_of_selected_features
+0.1847589926808461,16.0,32.0,87.0,300.0,1,316.239688,4

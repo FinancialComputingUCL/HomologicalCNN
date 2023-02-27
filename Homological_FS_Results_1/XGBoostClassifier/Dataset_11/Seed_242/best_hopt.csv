@@ -1,0 +1,2 @@
+alpha,colsample_bylevel,colsample_bytree,gamma,lambda,learning_rate,max_depth,n_estimators,subsample,execution_time
+0,0.8788146638835409,0.477268744236835,0,0,0.6918652505392912,6.0,2600.0,0.3132938356837259,41.754116

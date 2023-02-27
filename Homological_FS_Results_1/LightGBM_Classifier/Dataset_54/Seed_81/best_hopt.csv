@@ -1,0 +1,2 @@
+learning_rate,max_depth,n_estimators,num_leaves,reg_alpha,reg_lambda,subsample,execution_time
+0.6153402614209943,0.0,3000.0,10.0,0,1,0.3465225042107088,59.581534
