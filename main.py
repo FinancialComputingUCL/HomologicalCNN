@@ -6,7 +6,7 @@ import params
 import argparse
 
 parser = argparse.ArgumentParser(description='HCNN Experiments.')
-parser.add_argument('--model', type=str, default='TabNet', help="Model to be run.")
+parser.add_argument('--model', type=str, default='HCNN', help="Model to be run.")
 parser.add_argument('--dataset_id', type=int, default=16, help="Dataset to be considered.")
 args = parser.parse_args()
 

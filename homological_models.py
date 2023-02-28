@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 
 from skorch import NeuralNetClassifier
+from pytorch_lightning import LightningModule
+from torch.nn import functional as F
 
 from homological_utils import *
 
@@ -343,12 +345,15 @@ class HCNN_model2D(nn.Module):
             return preds
 
 
-class HCNN_model1D(nn.Module):
+class HCNN_model1D(LightningModule):
     def __init__(self, T, FILTERS_L1, FILTERS_L2, last_layer_neurons, NF_4=None, NF_3=None, NF_2=None):
         super().__init__()
         self.NF_4 = NF_4
         self.NF_3 = NF_3
         self.NF_2 = NF_2
+
+        self.test_targets = None
+        self.test_preds = None
 
         if (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is not None):
             self.logic_conv_tetrahedra = nn.Sequential(
@@ -540,7 +545,7 @@ class HCNN_model1D(nn.Module):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.BatchNorm2d(FILTERS_L1),
+                nn.BatchNorm1d(FILTERS_L1),
                 nn.LeakyReLU(negative_slope=0.01),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
@@ -587,7 +592,7 @@ class HCNN_model1D(nn.Module):
             concatenation = torch.cat([tetrahedra, triangles, simplex], dim=1)
 
             x = self.logic_mlp(concatenation)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -605,7 +610,7 @@ class HCNN_model1D(nn.Module):
             concatenation = torch.cat([triangles, simplex], dim=1)
 
             x = self.logic_mlp(concatenation)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -617,7 +622,7 @@ class HCNN_model1D(nn.Module):
             simplex = torch.reshape(simplex, (simplex.shape[0], simplex.shape[1]))
 
             x = self.logic_mlp(simplex)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -629,7 +634,7 @@ class HCNN_model1D(nn.Module):
             tetrahedra = torch.reshape(tetrahedra, (tetrahedra.shape[0], tetrahedra.shape[1]))
 
             x = self.logic_mlp(tetrahedra)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -646,7 +651,7 @@ class HCNN_model1D(nn.Module):
             concatenation = torch.cat([tetrahedra, simplex], dim=1)
 
             x = self.logic_mlp(concatenation)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -658,7 +663,7 @@ class HCNN_model1D(nn.Module):
             triangles = torch.reshape(triangles, (triangles.shape[0], triangles.shape[1]))
 
             x = self.logic_mlp(triangles)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
 
@@ -675,6 +680,37 @@ class HCNN_model1D(nn.Module):
             concatenation = torch.cat([tetrahedra, triangles], dim=1)
 
             x = self.logic_mlp(concatenation)
-            preds = torch.softmax(x, dim=1)
+            preds = torch.log_softmax(x, dim=1)
 
             return preds
+
+    def cross_entropy_loss(self, logits, labels):
+        return F.nll_loss(logits, labels)
+
+    def training_step(self, train_batch, batch_idx):
+        batch_tetrahedra, batch_triangles, batch_simplex, batch_targets = batch_decomposition(train_batch)
+        logits = self.forward(batch_tetrahedra, batch_triangles, batch_simplex)
+        loss = self.cross_entropy_loss(logits, batch_targets)
+        self.log('train_loss', loss)
+        return loss
+
+    def validation_step(self, val_batch, batch_idx):
+        batch_tetrahedra, batch_triangles, batch_simplex, batch_targets = batch_decomposition(val_batch)
+        logits = self.forward(batch_tetrahedra, batch_triangles, batch_simplex)
+        loss = self.cross_entropy_loss(logits, batch_targets)
+        self.log('val_loss', loss)
+
+    def test_step(self, test_batch, batch_idx):
+        batch_tetrahedra, batch_triangles, batch_simplex, batch_targets = batch_decomposition(test_batch)
+        logits = self.forward(batch_tetrahedra, batch_triangles, batch_simplex)
+        preds = torch.argmax(logits, dim=1)
+        return {'logits': logits, 'preds': preds, 'targets': batch_targets}
+
+    def test_epoch_end(self, outputs):
+        targets, preds = transform_outputs(outputs)
+        self.test_targets = targets
+        self.test_preds = preds
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        return optimizer

@@ -545,31 +545,33 @@ class ModelsManager:
         tmfg_similarity = optimization_parameters['tmfg_similarity']
         learning_rate = optimization_parameters['learning_rate']
 
-        try:
-            model = HCNN(X_train=self.X_train,
-                         X_val=self.X_val,
-                         X_test=self.X_test,
-                         y_train=self.y_train,
-                         y_val=self.y_val,
-                         y_test=self.y_test,
-                         n_filters_l1=n_filters_l1,
-                         n_filters_l2=n_filters_l2,
-                         tmfg_repetitions=tmfg_iterations,
-                         tmfg_confidence=tmfg_confidence,
-                         tmfg_similarity=tmfg_similarity,
-                         learning_rate=learning_rate)
+        local_X_train = self.X_train.copy()
+        local_X_val = self.X_val.copy()
+        local_X_test = self.X_test.copy()
+        local_y_train = self.y_train.copy()
+        local_y_val = self.y_val.copy()
+        local_y_test = self.y_test.copy()
 
-            np_y_train = np.array(self.y_train)
-            np_y_val = np.array(self.y_val)
+        model = HCNN(X_train=local_X_train,
+                     X_val=local_X_val,
+                     X_test=local_X_test,
+                     y_train=local_y_train,
+                     y_val=local_y_val,
+                     y_test=local_y_test,
+                     n_filters_l1=n_filters_l1,
+                     n_filters_l2=n_filters_l2,
+                     tmfg_repetitions=tmfg_iterations,
+                     tmfg_confidence=tmfg_confidence,
+                     tmfg_similarity=tmfg_similarity,
+                     learning_rate=learning_rate)
 
-            local_X_train, local_X_val, local_X_test, local_y_train, local_y_val, local_y_test, model, number_of_selected_features = model.data_preparation_pipeline()
+        model.data_preparation_pipeline()
 
-            model.fit(local_X_train, np_y_train)
-            preds = model.predict(local_X_val)
-            score = f1_score(np_y_val, preds, average='macro')
-            return -score
-        except:
-            return 0
+        model.fit()
+        targets, preds = model.predict()
+        score = f1_score(targets, preds, average='macro')
+        print(score)
+        return -score
 
     @measure_execution_time
     def hcnn_net_optimize(self, trial):
@@ -589,12 +591,22 @@ class ModelsManager:
         self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
-        model = HCNN(X_train=self.post_opt_X_train,
-                     X_val=self.X_val,
-                     X_test=self.X_test,
-                     y_train=self.post_opt_y_train,
-                     y_val=self.y_val,
-                     y_test=self.y_test,
+        self.post_opt_X_train = np.array(self.post_opt_X_train)
+        self.post_opt_y_train = np.array(self.post_opt_y_train)
+
+        local_X_train = self.post_opt_X_train.copy()
+        local_X_val = self.X_val.copy()
+        local_X_test = self.X_test.copy()
+        local_y_train = self.post_opt_y_train.copy()
+        local_y_val = self.y_val.copy()
+        local_y_test = self.y_test.copy()
+
+        model = HCNN(X_train=local_X_train,
+                     X_val=local_X_val,
+                     X_test=local_X_test,
+                     y_train=local_y_train,
+                     y_val=local_y_val,
+                     y_test=local_y_test,
                      n_filters_l1=int(best_hopt['n_filters_l1']),
                      n_filters_l2=int(best_hopt['n_filters_l2']),
                      tmfg_repetitions=int(best_hopt['tmfg_iterations']),
@@ -602,15 +614,14 @@ class ModelsManager:
                      tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
                      learning_rate=best_hopt['learning_rate'])
 
-        local_X_train, local_X_val, local_X_test, local_y_train, local_y_val, local_y_test, model, number_of_selected_features = model.data_preparation_pipeline()
+        model.data_preparation_pipeline()
+        model.fit()
 
-        model.fit(local_X_train, self.post_opt_y_train)
-
-        preds = model.predict(local_X_test)
-        probs = model.predict_proba(local_X_test)
+        targets, preds = model.predict()
+        probs = preds # TODO: compute probs
         score = classification_report(self.y_test, preds)
         print(score)
-        return number_of_selected_features, preds, probs
+        return None, preds, probs
 
     def hcnn_manager(self):
         root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'

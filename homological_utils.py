@@ -1,7 +1,12 @@
+import numpy as np
+
 from tmfg_bootstrapped import *
 from tmfg_core import *
 
 from sklearn.preprocessing import RobustScaler
+
+from torch.utils.data import DataLoader
+from pytorch_lightning.trainer.supporters import CombinedLoader
 
 
 def get_final_X_4(X, final_b_cliques_4):
@@ -332,3 +337,211 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         X_test = {'simplex': final_test_X_2}
 
     return len(nodes_list), shape_4, shape_3, shape_2, X_train, X_val, X_test, y_train, y_val, y_test
+
+
+def prepare_dataloaders(X_train, X_val, X_test, y_train, y_val, y_test, batch_size=32):
+    combined_loaders_train = None
+    combined_loaders_val = None
+    combined_loaders_test = None
+
+    # Dataloaders training side.
+    if 'tetrahedra' in X_train.keys() and 'triangles' in X_train.keys() and 'simplex' in X_train.keys():
+        loader_tetrahedra = DataLoader(X_train['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_triangles = DataLoader(X_train['triangles'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_train['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_train.keys() and 'triangles' in X_train.keys() and 'simplex' not in X_train.keys():
+        loader_tetrahedra = DataLoader(X_train['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_triangles = DataLoader(X_train['triangles'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_train.keys() and 'triangles' not in X_train.keys() and 'simplex' in X_train.keys():
+        loader_tetrahedra = DataLoader(X_train['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_train['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_train.keys() and 'triangles' not in X_train.keys() and 'simplex' not in X_train.keys():
+        loader_tetrahedra = DataLoader(X_train['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_train.keys() and 'triangles' in X_train.keys() and 'simplex' in X_train.keys():
+        loader_triangles = DataLoader(X_train['triangles'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_train['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_train.keys() and 'triangles' in X_train.keys() and 'simplex' not in X_train.keys():
+        loader_triangles = DataLoader(X_train['triangles'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {"triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_train.keys() and 'triangles' not in X_train.keys() and 'simplex' in X_train.keys():
+        loader_simplex = DataLoader(X_train['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_train, batch_size=batch_size, drop_last=True)
+
+        loaders = {'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_train = CombinedLoader(loaders)
+
+    # Dataloaders validation side.
+    if 'tetrahedra' in X_val.keys() and 'triangles' in X_val.keys() and 'simplex' in X_val.keys():
+        loader_tetrahedra = DataLoader(X_val['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_triangles = DataLoader(X_val['triangles'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_val['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_val.keys() and 'triangles' in X_val.keys() and 'simplex' not in X_val.keys():
+        loader_tetrahedra = DataLoader(X_val['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_triangles = DataLoader(X_val['triangles'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_val.keys() and 'triangles' not in X_val.keys() and 'simplex' in X_val.keys():
+        loader_tetrahedra = DataLoader(X_val['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_val['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_val.keys() and 'triangles' not in X_val.keys() and 'simplex' not in X_val.keys():
+        loader_tetrahedra = DataLoader(X_val['tetrahedra'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_val.keys() and 'triangles' in X_val.keys() and 'simplex' in X_val.keys():
+        loader_triangles = DataLoader(X_val['triangles'], batch_size=batch_size, drop_last=True)
+        loader_simplex = DataLoader(X_val['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_val.keys() and 'triangles' in X_val.keys() and 'simplex' not in X_val.keys():
+        loader_triangles = DataLoader(X_val['triangles'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {"triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_val.keys() and 'triangles' not in X_val.keys() and 'simplex' in X_val.keys():
+        loader_simplex = DataLoader(X_val['simplex'], batch_size=batch_size, drop_last=True)
+        loader_targets = DataLoader(y_val, batch_size=batch_size, drop_last=True)
+
+        loaders = {'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_val = CombinedLoader(loaders)
+
+    # Dataloaders test side.
+    if 'tetrahedra' in X_test.keys() and 'triangles' in X_test.keys() and 'simplex' in X_test.keys():
+        loader_tetrahedra = DataLoader(X_test['tetrahedra'], batch_size=batch_size)
+        loader_triangles = DataLoader(X_test['triangles'], batch_size=batch_size)
+        loader_simplex = DataLoader(X_test['simplex'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_test.keys() and 'triangles' in X_test.keys() and 'simplex' not in X_test.keys():
+        loader_tetrahedra = DataLoader(X_test['tetrahedra'], batch_size=batch_size)
+        loader_triangles = DataLoader(X_test['triangles'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"tetrahedra": loader_tetrahedra, "triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_test.keys() and 'triangles' not in X_test.keys() and 'simplex' in X_test.keys():
+        loader_tetrahedra = DataLoader(X_test['tetrahedra'], batch_size=batch_size)
+        loader_simplex = DataLoader(X_test['simplex'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' in X_test.keys() and 'triangles' not in X_test.keys() and 'simplex' not in X_test.keys():
+        loader_tetrahedra = DataLoader(X_test['tetrahedra'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"tetrahedra": loader_tetrahedra, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_test.keys() and 'triangles' in X_test.keys() and 'simplex' in X_test.keys():
+        loader_triangles = DataLoader(X_test['triangles'], batch_size=batch_size)
+        loader_simplex = DataLoader(X_test['simplex'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"triangles": loader_triangles, 'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_test.keys() and 'triangles' in X_test.keys() and 'simplex' not in X_test.keys():
+        loader_triangles = DataLoader(X_test['triangles'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {"triangles": loader_triangles, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    if 'tetrahedra' not in X_test.keys() and 'triangles' not in X_test.keys() and 'simplex' in X_test.keys():
+        loader_simplex = DataLoader(X_test['simplex'], batch_size=batch_size)
+        loader_targets = DataLoader(y_test, batch_size=batch_size)
+
+        loaders = {'simplex': loader_simplex, 'targets': loader_targets}
+        combined_loaders_test = CombinedLoader(loaders)
+
+    return combined_loaders_train, combined_loaders_val, combined_loaders_test
+
+
+def batch_decomposition(batch):
+    try:
+        batch_tetrahedra = batch["tetrahedra"]
+    except:
+        batch_tetrahedra = None
+
+    try:
+        batch_triangles = batch["triangles"]
+    except:
+        batch_triangles = None
+
+    try:
+        batch_simplex = batch["simplex"]
+    except:
+        batch_simplex = None
+
+    try:
+        batch_targets = batch["targets"]
+    except:
+        batch_targets = None
+
+    return batch_tetrahedra, batch_triangles, batch_simplex, batch_targets
+
+
+def transform_outputs(outputs):
+    preds_list = []
+    targets_list = []
+    for _ in outputs:
+        preds = _['preds'].numpy().tolist()
+        targets = _['targets'].numpy().tolist()
+        preds_list.extend(preds)
+        targets_list.extend(targets)
+    return targets_list, preds_list

@@ -1,7 +1,13 @@
+from pytorch_lightning import Trainer
+
 from homological_models import *
 import params
 
 from skorch.callbacks import EarlyStopping
+from torch.utils.data import DataLoader
+from pytorch_lightning.trainer.supporters import CombinedLoader
+
+from torch import Tensor
 
 
 class HCNN:
@@ -20,6 +26,10 @@ class HCNN:
             tmfg_similarity=tmfg_similarity
         )
 
+        print(self.X_train)
+        print(self.X_val)
+        print(self.X_test)
+
         self.model = HCNN_model1D(T=T,
                                   FILTERS_L1=n_filters_l1,
                                   FILTERS_L2=n_filters_l2,
@@ -28,21 +38,18 @@ class HCNN:
                                   NF_3=self.shape_triangles,
                                   NF_2=self.shape_simplex)
 
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.net = self.model
+        self.trainer = Trainer(max_epochs=3)
+        self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test)
 
-        device = torch.device(params.DEVICE if torch.cuda.is_available() else "cpu")
-        print("Using device: ", device)
+    def fit(self):
+        self.trainer.fit(self.net, self.train_dataloader)
 
-        self.net = NeuralNetClassifier(
-            self.model,
-            criterion=self.criterion,
-            max_epochs=max_epochs,
-            callbacks=[EarlyStopping(patience=params.EARLY_STOPPING_PATIENCE)],
-            batch_size=params.BATCH_SIZE,
-            verbose=0,
-            device=device,
-        )
+    def predict(self):
+        self.net.eval()
+        self.trainer = Trainer()
+        self.trainer.test(self.net, dataloaders=self.test_dataloader)
+        return self.net.test_targets, self.net.test_preds
 
     def data_preparation_pipeline(self):
         return self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.net, self.number_of_selected_features
