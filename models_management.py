@@ -568,7 +568,7 @@ class ModelsManager:
         model.data_preparation_pipeline()
 
         model.fit()
-        targets, preds = model.evaluate()
+        targets, preds, probs = model.evaluate()
         score = f1_score(targets, preds, average='macro')
         return -score
 
@@ -616,8 +616,7 @@ class ModelsManager:
         model.data_preparation_pipeline()
         model.fit()
 
-        targets, preds = model.predict()
-        probs = preds # TODO: compute probs
+        targets, preds, probs = model.predict()
         score = classification_report(self.y_test, preds)
         print(score)
         return None, preds, probs

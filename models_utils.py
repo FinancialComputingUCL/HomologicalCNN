@@ -33,12 +33,11 @@ def convert_to_string(array):
 
 
 def merge_probs_preds_classification(array1, array2, targets, filename):
-    #classes = convert_to_string(np.arange(0, array1.shape[1]))
-    #df1 = pd.DataFrame(array1, columns=classes)
+    classes = convert_to_string(np.arange(0, array1.shape[1]))
+    df1 = pd.DataFrame(array1, columns=classes)
     df2 = pd.DataFrame(array2, columns=['Pred'])
     df3 = pd.DataFrame(targets, columns=['Target'])
-    #df = pd.concat([df1, df2, df3], axis=1)
-    df = pd.concat([df2, df3], axis=1)
+    df = pd.concat([df1, df2, df3], axis=1)
     df.to_csv(filename, index=False)
 
 

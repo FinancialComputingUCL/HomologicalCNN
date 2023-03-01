@@ -541,12 +541,17 @@ def batch_decomposition(batch):
 def transform_outputs(outputs):
     preds_list = []
     targets_list = []
+    probs_list = []
     for _ in outputs:
         preds = _['preds'].numpy().tolist()
         targets = _['targets'].numpy().tolist()
+        probs = _['probs'].numpy()
         preds_list.extend(preds)
         targets_list.extend(targets)
-    return targets_list, preds_list
+        probs_list.extend(probs)
+
+    probs_list = np.stack(probs_list, axis=0)
+    return targets_list, preds_list, probs_list
 
 
 def get_openai_lr(model):

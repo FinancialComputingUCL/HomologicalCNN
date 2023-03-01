@@ -1,4 +1,5 @@
 from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import EarlyStopping
 
 import params
 from homological_models import *
@@ -27,27 +28,36 @@ class HCNN:
                                   NF_4=self.shape_tetrahedra,
                                   NF_3=self.shape_triangles,
                                   NF_2=self.shape_simplex)
-
-        learning_rate = get_openai_lr(self.model)
         self.model.set_lr(learning_rate)
 
-        self.trainer = Trainer(max_epochs=3)
-        self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test)
+        early_stopping = EarlyStopping('val_loss')
+        if params.DEVICE == 'cuda':
+            self.trainer = Trainer(max_epochs=max_epochs, accelerator='gpu', enable_progress_bar=True, enable_model_summary=False, callbacks=[early_stopping])
+        else:
+            self.trainer = Trainer(max_epochs=max_epochs, enable_progress_bar=True, enable_model_summary=False, callbacks=[early_stopping])
+
+        self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train,
+                                                                                               self.X_val,
+                                                                                               self.X_test,
+                                                                                               self.y_train,
+                                                                                               self.y_val,
+                                                                                               self.y_test,
+                                                                                               batch_size=params.BATCH_SIZE)
 
     def fit(self):
-        self.trainer.fit(self.model, self.train_dataloader)
+        self.trainer.fit(self.model, train_dataloaders=self.train_dataloader, val_dataloaders=self.val_dataloader)
 
     def evaluate(self):
         self.model.eval()
         self.trainer = Trainer()
-        self.trainer.validate(self.model, dataloaders=self.val_dataloader)
-        return self.model.val_targets, self.model.val_preds
+        self.trainer.validate(self.model, dataloaders=self.val_dataloader, verbose=False)
+        return self.model.val_targets, self.model.val_preds, self.model.val_probs
 
     def predict(self):
         self.model.eval()
         self.trainer = Trainer()
-        self.trainer.test(self.model, dataloaders=self.test_dataloader)
-        return self.model.test_targets, self.model.test_preds
+        self.trainer.test(self.model, dataloaders=self.test_dataloader, verbose=False)
+        return self.model.test_targets, self.model.test_preds, self.model.test_probs
 
     def data_preparation_pipeline(self):
         return self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.model, self.number_of_selected_features

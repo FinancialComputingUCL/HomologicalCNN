@@ -354,8 +354,10 @@ class HCNN_model1D(LightningModule):
 
         self.val_targets = None
         self.val_preds = None
+        self.val_probs = None
         self.test_targets = None
         self.test_preds = None
+        self.test_probs = None
         self.lr = lr
 
         if (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is not None):
@@ -701,26 +703,32 @@ class HCNN_model1D(LightningModule):
         batch_tetrahedra, batch_triangles, batch_simplex, batch_targets = batch_decomposition(val_batch)
         logits = self.forward(batch_tetrahedra, batch_triangles, batch_simplex)
         preds = torch.argmax(logits, dim=1)
-        return {'logits': logits, 'preds': preds, 'targets': batch_targets}
+        loss = self.cross_entropy_loss(logits, batch_targets)
+        self.log('val_loss', loss)
+        return {'probs': torch.exp(logits), 'preds': preds, 'targets': batch_targets}
 
     def test_step(self, test_batch, batch_idx):
         batch_tetrahedra, batch_triangles, batch_simplex, batch_targets = batch_decomposition(test_batch)
         logits = self.forward(batch_tetrahedra, batch_triangles, batch_simplex)
         preds = torch.argmax(logits, dim=1)
-        return {'logits': logits, 'preds': preds, 'targets': batch_targets}
+        loss = self.cross_entropy_loss(logits, batch_targets)
+        self.log('test_loss', loss)
+        return {'probs': torch.exp(logits), 'preds': preds, 'targets': batch_targets}
 
     def test_epoch_end(self, outputs):
-        targets, preds = transform_outputs(outputs)
+        targets, preds, probs = transform_outputs(outputs)
         self.test_targets = targets
         self.test_preds = preds
+        self.test_probs = probs
 
     def validation_epoch_end(self, outputs):
-        targets, preds = transform_outputs(outputs)
+        targets, preds, probs = transform_outputs(outputs)
         self.val_targets = targets
         self.val_preds = preds
+        self.val_probs = probs
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), self.lr)
         return optimizer
 
     def set_lr(self, lr):
