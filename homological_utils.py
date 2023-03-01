@@ -1,16 +1,16 @@
-import numpy as np
+import math
+
+from pytorch_lightning.trainer.supporters import CombinedLoader
+from sklearn.preprocessing import RobustScaler
+from torch.utils.data import DataLoader
 
 from tmfg_bootstrapped import *
 from tmfg_core import *
 
-from sklearn.preprocessing import RobustScaler
-
-from torch.utils.data import DataLoader
-from pytorch_lightning.trainer.supporters import CombinedLoader
-
 
 def get_final_X_4(X, final_b_cliques_4):
     final_X = None
+    X = pd.DataFrame(X)
 
     for e, c in enumerate(final_b_cliques_4):
         if final_X is None:
@@ -24,6 +24,7 @@ def get_final_X_4(X, final_b_cliques_4):
 
 def get_final_X_3(X, final_b_cliques_3):
     final_X = None
+    X = pd.DataFrame(X)
 
     for e, c in enumerate(final_b_cliques_3):
         if final_X is None:
@@ -37,6 +38,7 @@ def get_final_X_3(X, final_b_cliques_3):
 
 def get_final_X_2(X, final_b_cliques_2):
     final_X = None
+    X = pd.DataFrame(X)
 
     for e, c in enumerate(final_b_cliques_2):
         if final_X is None:
@@ -545,3 +547,8 @@ def transform_outputs(outputs):
         preds_list.extend(preds)
         targets_list.extend(targets)
     return targets_list, preds_list
+
+
+def get_openai_lr(model):
+    num_params = sum(p.numel() for p in model.parameters())
+    return 0.003239 - 0.0001395 * math.log(num_params)

@@ -1,13 +1,7 @@
 from pytorch_lightning import Trainer
 
-from homological_models import *
 import params
-
-from skorch.callbacks import EarlyStopping
-from torch.utils.data import DataLoader
-from pytorch_lightning.trainer.supporters import CombinedLoader
-
-from torch import Tensor
+from homological_models import *
 
 
 class HCNN:
@@ -26,10 +20,6 @@ class HCNN:
             tmfg_similarity=tmfg_similarity
         )
 
-        print(self.X_train)
-        print(self.X_val)
-        print(self.X_test)
-
         self.model = HCNN_model1D(T=T,
                                   FILTERS_L1=n_filters_l1,
                                   FILTERS_L2=n_filters_l2,
@@ -38,18 +28,26 @@ class HCNN:
                                   NF_3=self.shape_triangles,
                                   NF_2=self.shape_simplex)
 
-        self.net = self.model
+        learning_rate = get_openai_lr(self.model)
+        self.model.set_lr(learning_rate)
+
         self.trainer = Trainer(max_epochs=3)
         self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test)
 
     def fit(self):
-        self.trainer.fit(self.net, self.train_dataloader)
+        self.trainer.fit(self.model, self.train_dataloader)
+
+    def evaluate(self):
+        self.model.eval()
+        self.trainer = Trainer()
+        self.trainer.validate(self.model, dataloaders=self.val_dataloader)
+        return self.model.val_targets, self.model.val_preds
 
     def predict(self):
-        self.net.eval()
+        self.model.eval()
         self.trainer = Trainer()
-        self.trainer.test(self.net, dataloaders=self.test_dataloader)
-        return self.net.test_targets, self.net.test_preds
+        self.trainer.test(self.model, dataloaders=self.test_dataloader)
+        return self.model.test_targets, self.model.test_preds
 
     def data_preparation_pipeline(self):
-        return self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.net, self.number_of_selected_features
+        return self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.model, self.number_of_selected_features

@@ -568,9 +568,8 @@ class ModelsManager:
         model.data_preparation_pipeline()
 
         model.fit()
-        targets, preds = model.predict()
+        targets, preds = model.evaluate()
         score = f1_score(targets, preds, average='macro')
-        print(score)
         return -score
 
     @measure_execution_time
