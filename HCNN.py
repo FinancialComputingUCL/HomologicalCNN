@@ -28,7 +28,7 @@ class HCNN:
                                   NF_4=self.shape_tetrahedra,
                                   NF_3=self.shape_triangles,
                                   NF_2=self.shape_simplex)
-        self.model.set_lr(learning_rate)
+        self.model.set_lr(get_openai_lr(self.model))
 
         early_stopping = EarlyStopping('val_loss')
         if params.DEVICE == 'cuda':

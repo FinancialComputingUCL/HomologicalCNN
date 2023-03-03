@@ -577,7 +577,7 @@ class ModelsManager:
         optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4),
                                    'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 8),
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
-                                   'tmfg_confidence': hp.quniform('tmfg_confidence', 85, 99, 3),
+                                   'tmfg_confidence': hp.quniform('tmfg_confidence', 10, 15, 3), #85, 99
                                    'tmfg_similarity': hp.choice('tmfg_similarity', self.tmfg_similarities_options),
                                    'learning_rate': hp.uniform('learning_rate', 1e-4, 1)
                                    }
