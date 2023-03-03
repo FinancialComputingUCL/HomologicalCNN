@@ -8,7 +8,7 @@ from homological_models import *
 class HCNN:
     def __init__(self, X_train, X_val, X_test, y_train, y_val, y_test,
                  n_filters_l1, n_filters_l2, tmfg_repetitions, tmfg_confidence,
-                 tmfg_similarity, learning_rate, max_epochs=params.MAX_EPOCHS, T=1):
+                 tmfg_similarity, max_epochs=params.MAX_EPOCHS, T=1):
         self.number_of_selected_features, self.shape_tetrahedra, self.shape_triangles, self.shape_simplex, self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test = h_input_transform(
             X_train=X_train,
             X_val=X_val,

@@ -462,9 +462,9 @@ class HCNN_model1D(LightningModule):
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=FILTERS_L2, out_features=128),
-                nn.Linear(in_features=128, out_features=64),
-                nn.Linear(in_features=64, out_features=last_layer_neurons)
+                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2+32)),
+                nn.Linear(in_features=(FILTERS_L2+32), out_features=(FILTERS_L2+64)),
+                nn.Linear(in_features=(FILTERS_L2+64), out_features=last_layer_neurons)
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is None):
@@ -483,9 +483,9 @@ class HCNN_model1D(LightningModule):
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons)
+                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
+                nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
+                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons)
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is not None):
@@ -539,9 +539,9 @@ class HCNN_model1D(LightningModule):
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons)
+                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
+                nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
+                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons)
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is None):

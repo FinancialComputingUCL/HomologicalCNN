@@ -58,6 +58,7 @@ class ModelsManager:
         self.post_opt_y_train = None
 
         self.tmfg_similarities_options = ['pearson', 'spearman']
+        self.tmfg_pvalues_options = [5, 25, 50, 75, 95, 99]
 
     # === Random Forest Optimization === #
 
@@ -543,7 +544,6 @@ class ModelsManager:
         tmfg_iterations = int(optimization_parameters['tmfg_iterations'])
         tmfg_confidence = optimization_parameters['tmfg_confidence']
         tmfg_similarity = optimization_parameters['tmfg_similarity']
-        learning_rate = optimization_parameters['learning_rate']
 
         local_X_train = self.X_train.copy()
         local_X_val = self.X_val.copy()
@@ -562,8 +562,7 @@ class ModelsManager:
                      n_filters_l2=n_filters_l2,
                      tmfg_repetitions=tmfg_iterations,
                      tmfg_confidence=tmfg_confidence,
-                     tmfg_similarity=tmfg_similarity,
-                     learning_rate=learning_rate)
+                     tmfg_similarity=tmfg_similarity)
 
         model.data_preparation_pipeline()
 
@@ -577,9 +576,8 @@ class ModelsManager:
         optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4),
                                    'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 8),
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
-                                   'tmfg_confidence': hp.quniform('tmfg_confidence', 10, 15, 3), #85, 99
+                                   'tmfg_confidence': hp.choice('tmfg_confidence', self.tmfg_pvalues_options),
                                    'tmfg_similarity': hp.choice('tmfg_similarity', self.tmfg_similarities_options),
-                                   'learning_rate': hp.uniform('learning_rate', 1e-4, 1)
                                    }
         best = fmin(fn=self.hcnn_net_objective, space=optimization_parameters, algo=tpe.suggest,
                     trials=trial, max_evals=params.HOPT_MAX_ITERATIONS, rstate=np.random.default_rng(self.seed))
@@ -610,8 +608,8 @@ class ModelsManager:
                      n_filters_l2=int(best_hopt['n_filters_l2']),
                      tmfg_repetitions=int(best_hopt['tmfg_iterations']),
                      tmfg_confidence=best_hopt['tmfg_confidence'],
-                     tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
-                     learning_rate=best_hopt['learning_rate'])
+                     tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']]
+                     )
 
         model.data_preparation_pipeline()
         model.fit()
