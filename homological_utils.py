@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 from tmfg_bootstrapped import *
 from tmfg_core import *
-
+from bootstrapped_network import *
 
 def get_final_X_4(X, final_b_cliques_4):
     final_X = None
@@ -57,6 +57,13 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
                                                                                 tmfg_repetitions,
                                                                                 tmfg_confidence,
                                                                                 parallel=True).compute_tmfg_bootstrapping()
+
+    # Uncomment this to run the statistically robust version of the tmfg correlation matrix.
+    '''cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
+                                                                 tmfg_similarity,
+                                                                 tmfg_repetitions,
+                                                                 tmfg_confidence, 'tmfg', 'similarity_matrix', parallel=True).compute_bootstrapping()
+    original_tmfg = adjacency_matrix'''
 
     c = nx.degree_centrality(adjacency_matrix)
 
@@ -543,9 +550,9 @@ def transform_outputs(outputs):
     targets_list = []
     probs_list = []
     for _ in outputs:
-        preds = _['preds'].numpy().tolist()
-        targets = _['targets'].numpy().tolist()
-        probs = _['probs'].numpy()
+        preds = _['preds'].cpu().numpy().tolist()
+        targets = _['targets'].cpu().numpy().tolist()
+        probs = _['probs'].cpu().numpy()
         preds_list.extend(preds)
         targets_list.extend(targets)
         probs_list.extend(probs)
