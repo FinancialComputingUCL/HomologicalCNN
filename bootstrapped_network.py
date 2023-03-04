@@ -1,16 +1,14 @@
-from multiprocessing import Pool
 from collections import Counter
-import copy
-import random
+from multiprocessing import Pool
 
+from scipy.stats import pearsonr, spearmanr, kendalltau
 import networkx as nx
-import topcorr
 
 from tmfg_core import *
 
 
 class Bootstrapped_Network:
-    def __init__(self, df, correlation_type, number_of_repetitions, confidence_level, network_type, bootstrapping_side, parallel=True):
+    def __init__(self, df, correlation_type, number_of_repetitions, confidence_level, bootstrapping_side, parallel=True):
 
         self.df = pd.DataFrame(df)
         self.correlation_type = correlation_type
@@ -19,15 +17,9 @@ class Bootstrapped_Network:
         self.parallel = parallel
         self.confidence_level = confidence_level
         self.bootstrapping_side = bootstrapping_side
-        self.network_type = network_type
 
-        if self.network_type == 'tmfg':
-            _, _, self.adjacency_matrix = TMFG(self.original_correlation_matrix).compute_TMFG()
-            self.nx_network = nx.from_numpy_matrix(self.adjacency_matrix)
-        elif self.network_type == 'mst':
-            local_mst_corr_matrix = self.original_correlation_matrix.copy()
-            local_mst_corr_matrix = np.array(local_mst_corr_matrix)
-            self.nx_network = topcorr.mst(local_mst_corr_matrix)
+        _, _, self.adjacency_matrix = TMFG(self.original_correlation_matrix).compute_TMFG()
+        self.nx_network = nx.from_numpy_matrix(self.adjacency_matrix)
 
         self.original_network = copy.copy(self.nx_network)
 
@@ -42,20 +34,7 @@ class Bootstrapped_Network:
         except:
             raise Exception("Correlation type for similarity matrix not supported.")
 
-    def average_correlation_matrix(self, corr_matrices):
-        """
-        Compute the average correlation matrix from a list of correlation matrices.
-
-        Parameters:
-        -----------
-        corr_matrices: list of numpy arrays
-            A list of correlation matrices.
-
-        Returns:
-        --------
-        numpy array
-            The average correlation matrix.
-        """
+    def average_matrix(self, corr_matrices):
         n_matrices = len(corr_matrices)
         n = corr_matrices[0].shape[0]
         sum_matrix = np.zeros((n, n))
@@ -64,20 +43,7 @@ class Bootstrapped_Network:
         avg_matrix = sum_matrix / n_matrices
         return avg_matrix
 
-    def median_correlation_matrix(self, corr_matrices):
-        """
-        Compute the median correlation matrix from a list of correlation matrices.
-
-        Parameters:
-        -----------
-        corr_matrices: list of numpy arrays
-            A list of correlation matrices.
-
-        Returns:
-        --------
-        numpy array
-            The median correlation matrix.
-        """
+    def median_matrix(self, corr_matrices):
         n = corr_matrices[0].shape[0]
         stacked_matrices = np.stack(corr_matrices, axis=2)
         median_matrix = np.zeros((n, n))
@@ -118,7 +84,8 @@ class Bootstrapped_Network:
         list_of_similarity_matrices = []
         for d in array_dict:
             list_of_similarity_matrices.append(d[3])
-        median_similarity_matrix = self.median_correlation_matrix(list_of_similarity_matrices)
+
+        median_similarity_matrix = self.median_matrix(list_of_similarity_matrices)
 
         intermediate_networks_list = []
         for d in array_dict:
@@ -131,27 +98,20 @@ class Bootstrapped_Network:
             return self.nx_network
 
         elif self.bootstrapping_side == 'similarity_matrix':
-            if self.network_type == 'tmfg':
-                self.cliques, self.separators, local_adjacency_matrix = TMFG(median_similarity_matrix).compute_TMFG()
-                self.nx_network = nx.from_numpy_matrix(local_adjacency_matrix)
-                return self.cliques, self.separators, self.nx_network
-            elif self.network_type == 'mst':
-                self.nx_network = topcorr.mst(median_similarity_matrix)
-                return self.nx_network
+            self.cliques, self.separators, local_adjacency_matrix = TMFG(np.abs(median_similarity_matrix)).compute_TMFG() # Absolute correlations used to compute TMFG.
+            self.nx_network = nx.from_numpy_matrix(local_adjacency_matrix)
+            return self.cliques, self.separators, self.nx_network
 
     def perform_bootstrapping(self, numbered_edges, g, random_matrix):
         numbered_edges = numbered_edges.copy()
         bootstrapped = random_matrix.copy().sample(n=len(random_matrix), replace=True).reset_index(drop=True)
         corr_matrix_bootstrapped = self.get_correlation_matrix(bootstrapped)
 
-        if self.network_type == 'tmfg':
-            _, _, adjacency_matrix = TMFG(corr_matrix_bootstrapped).compute_TMFG()
-            bootstrapped_network = nx.from_numpy_matrix(adjacency_matrix)
-        elif self.network_type == 'mst':
-            bootstrapped_network = topcorr.mst(np.array(corr_matrix_bootstrapped))
+        _, _, adjacency_matrix = TMFG(corr_matrix_bootstrapped).compute_TMFG()
+        bootstrapped_network = nx.from_numpy_matrix(adjacency_matrix)
 
         for e in enumerate(g.edges()):
             if bootstrapped_network.has_edge(e[1][0], e[1][1]):
                 numbered_edges[e[0]] += 1
 
-        return (numbered_edges, bootstrapped_network, bootstrapped_network.degree(), corr_matrix_bootstrapped)
+        return numbered_edges, bootstrapped_network, bootstrapped_network.degree(), corr_matrix_bootstrapped

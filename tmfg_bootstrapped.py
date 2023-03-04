@@ -20,7 +20,7 @@ class TMFG_Bootstrapped:
 
         correlation_matrix = self.get_correlation_matrix(self.df)
 
-        self.cliques, self.separators, self.adjacency_matrix = TMFG(correlation_matrix).compute_TMFG()
+        self.cliques, self.separators, self.adjacency_matrix = TMFG(np.abs(correlation_matrix)).compute_TMFG() # Absolute correlations to compute the TMFG.
         self.nx_tmfg = nx.from_numpy_matrix(self.adjacency_matrix)
         self.original_tmfg = copy.copy(self.nx_tmfg)
         self.number_of_repetitions = number_of_repetitions

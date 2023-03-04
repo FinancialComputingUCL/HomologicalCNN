@@ -8,6 +8,7 @@ from tmfg_bootstrapped import *
 from tmfg_core import *
 from bootstrapped_network import *
 
+
 def get_final_X_4(X, final_b_cliques_4):
     final_X = None
     X = pd.DataFrame(X)
@@ -52,18 +53,18 @@ def get_final_X_2(X, final_b_cliques_2):
 
 def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repetitions, tmfg_confidence,
                       tmfg_similarity):
-    cliques, separators, original_tmfg, _, adjacency_matrix = TMFG_Bootstrapped(X_train,
+    '''cliques, separators, original_tmfg, _, adjacency_matrix = TMFG_Bootstrapped(X_train,
                                                                                 tmfg_similarity,
                                                                                 tmfg_repetitions,
                                                                                 tmfg_confidence,
-                                                                                parallel=True).compute_tmfg_bootstrapping()
+                                                                                parallel=True).compute_tmfg_bootstrapping()'''
 
     # Uncomment this to run the statistically robust version of the tmfg correlation matrix.
-    '''cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
+    cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
                                                                  tmfg_similarity,
                                                                  tmfg_repetitions,
-                                                                 tmfg_confidence, 'tmfg', 'similarity_matrix', parallel=True).compute_bootstrapping()
-    original_tmfg = adjacency_matrix'''
+                                                                 tmfg_confidence, 'similarity_matrix', parallel=True).compute_bootstrapping()
+    original_tmfg = adjacency_matrix
 
     c = nx.degree_centrality(adjacency_matrix)
 

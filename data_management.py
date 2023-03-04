@@ -30,8 +30,27 @@ class DataManager:
         self.__download_open_ml_dataset()
         self.__customize_data()
 
+        self.numerical_features = None
+        self.categorical_features = None
+
+    def __get_feature_types(self, dataset):
+        feature_types = dataset.features
+        feature_names = feature_types.keys()
+        numerical_features = []
+        categorical_features = []
+        for feature_name in feature_names:
+            if feature_types[feature_name].data_type == 'numeric':
+                numerical_features.append(feature_name)
+            else:
+                categorical_features.append(feature_name)
+
+        return numerical_features, categorical_features
+
     def __download_open_ml_dataset(self):
         dataset = open_data.get_dataset(self.dataset_id)
+        numerical_features, categorical_features = self.__get_feature_types(dataset)
+        self.numerical_features = numerical_features
+        self.categorical_features = categorical_features
 
         self.X, _, _, _ = dataset.get_data(dataset_format="dataframe")
         self.X.dropna(inplace=True)
@@ -53,6 +72,16 @@ class DataManager:
     def __customize_data(self):
         upper_bound_train_test = int(len(self.X) * params.TEST_PERCENTAGE)
         upper_bound_train_val = int((len(self.X) - upper_bound_train_test) * params.VALIDATION_PERCENTAGE)
+
+        # Isolate numerical features.
+        self.X = self.X[self.numerical_features]
+        self.X.reset_index(drop=True, inplace=True)
+        self.X.columns = np.arange(0, self.X.shape[1]).tolist()
+
+        # Isolate categorical features.
+        '''self.X_cat = self.X[self.categorical_features]
+        self.X_cat.reset_index(drop=True, inplace=True)
+        self.X_cat.columns = np.arange(0, self.X_cat.shape[1]).tolist()'''
 
         self.X_train = self.X[:-upper_bound_train_test]
         self.y_train = self.y[:-upper_bound_train_test]

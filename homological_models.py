@@ -6,6 +6,7 @@ from pytorch_lightning import LightningModule
 from torch.nn import functional as F
 
 from homological_utils import *
+import params
 
 
 class HCNN_model2D(nn.Module):
@@ -729,7 +730,7 @@ class HCNN_model1D(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=32)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=params.MAX_EPOCHS//4)
         return [optimizer], [scheduler]
 
     def set_lr(self, lr):

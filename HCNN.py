@@ -28,13 +28,15 @@ class HCNN:
                                   NF_4=self.shape_tetrahedra,
                                   NF_3=self.shape_triangles,
                                   NF_2=self.shape_simplex)
+
+        # Set learning rate based on OpenAI's implementation.
         self.model.set_lr(get_openai_lr(self.model))
 
         early_stopping = EarlyStopping('val_loss')
         if params.DEVICE == 'cuda':
-            self.trainer = Trainer(max_epochs=max_epochs, accelerator='gpu', enable_progress_bar=True, enable_model_summary=False, callbacks=[early_stopping])
+            self.trainer = Trainer(max_epochs=max_epochs, accelerator='gpu', enable_progress_bar=False, enable_model_summary=False, callbacks=[early_stopping])
         else:
-            self.trainer = Trainer(max_epochs=max_epochs, enable_progress_bar=True, enable_model_summary=False, callbacks=[early_stopping])
+            self.trainer = Trainer(max_epochs=max_epochs, enable_progress_bar=False, enable_model_summary=False, callbacks=[early_stopping])
 
         self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train,
                                                                                                self.X_val,
