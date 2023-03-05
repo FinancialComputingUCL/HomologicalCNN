@@ -34,9 +34,20 @@ class HCNN:
 
         early_stopping = EarlyStopping('val_loss')
         if params.DEVICE == 'cuda':
-            self.trainer = Trainer(max_epochs=max_epochs, accelerator='gpu', enable_progress_bar=False, enable_model_summary=False, callbacks=[early_stopping])
+            self.trainer = Trainer(max_epochs=max_epochs,
+                                   accelerator='gpu',
+                                   enable_progress_bar=False,
+                                   enable_model_summary=False,
+                                   callbacks=[early_stopping],
+                                   enable_checkpointing=False,
+                                   logger=False)
         else:
-            self.trainer = Trainer(max_epochs=max_epochs, enable_progress_bar=False, enable_model_summary=False, callbacks=[early_stopping])
+            self.trainer = Trainer(max_epochs=max_epochs,
+                                   enable_progress_bar=False,
+                                   enable_model_summary=False,
+                                   callbacks=[early_stopping],
+                                   enable_checkpointing=False,
+                                   logger=False)
 
         self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train,
                                                                                                self.X_val,

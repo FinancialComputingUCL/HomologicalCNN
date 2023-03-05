@@ -1,26 +1,17 @@
-import math
-
-import numpy as np
-import pandas as pd
-import torch
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, f1_score, accuracy_score
-from sklearn.utils import shuffle
-
-from xgboost import XGBClassifier
-from tabpfn import TabPFNClassifier
 from catboost import CatBoostClassifier
-from lightgbm import LGBMClassifier
-from pytorch_tabnet.tab_model import TabNetClassifier
-
 from hyperopt import tpe, hp, Trials
 from hyperopt.fmin import fmin
+from lightgbm import LGBMClassifier
+from pytorch_tabnet.tab_model import TabNetClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, f1_score
+from tabpfn import TabPFNClassifier
+from xgboost import XGBClassifier
+import shutil
 
-import params
+from HCNN import *
 from data_management import *
 from models_utils import *
-from HCNN import *
 
 
 class ModelsManager:
@@ -141,13 +132,22 @@ class ModelsManager:
         alpha = optimization_parameters['alpha']
         lambda_ = optimization_parameters['lambda']
 
-        model = XGBClassifier(n_estimators=n_estimators,
-                              max_depth=max_dept,
-                              learning_rate=learning_rate,
-                              subsample=subsample, colsample_bytree=colsample_bytree,
-                              colsample_bylevel=colsample_bylevel,
-                              gamma=gamma, alpha=alpha, lambda_=lambda_,
-                              n_jobs=8)
+        if params.DEVICE == 'cuda':
+            model = XGBClassifier(n_estimators=n_estimators,
+                                  max_depth=max_dept,
+                                  learning_rate=learning_rate,
+                                  subsample=subsample, colsample_bytree=colsample_bytree,
+                                  colsample_bylevel=colsample_bylevel,
+                                  gamma=gamma, alpha=alpha, lambda_=lambda_,
+                                  n_jobs=8, tree_method='gpu_hist')
+        else:
+            model = XGBClassifier(n_estimators=n_estimators,
+                                  max_depth=max_dept,
+                                  learning_rate=learning_rate,
+                                  subsample=subsample, colsample_bytree=colsample_bytree,
+                                  colsample_bylevel=colsample_bylevel,
+                                  gamma=gamma, alpha=alpha, lambda_=lambda_,
+                                  n_jobs=8)
 
         scaled_X_train, scaled_X_val = scaling(X_train=self.X_train,
                                                X_additional=self.X_val,
@@ -184,16 +184,28 @@ class ModelsManager:
         self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
-        model = XGBClassifier(n_estimators=int(best_hopt['n_estimators']),
-                              max_depth=int(best_hopt['max_depth']),
-                              learning_rate=best_hopt['learning_rate'],
-                              subsample=best_hopt['subsample'],
-                              colsample_bytree=best_hopt['colsample_bytree'],
-                              colsample_bylevel=best_hopt['colsample_bylevel'],
-                              gamma=best_hopt['gamma'],
-                              alpha=best_hopt['alpha'],
-                              lambda_=best_hopt['lambda'],
-                              n_jobs=8)
+        if params.DEVICE == 'cuda':
+            model = XGBClassifier(n_estimators=int(best_hopt['n_estimators']),
+                                  max_depth=int(best_hopt['max_depth']),
+                                  learning_rate=best_hopt['learning_rate'],
+                                  subsample=best_hopt['subsample'],
+                                  colsample_bytree=best_hopt['colsample_bytree'],
+                                  colsample_bylevel=best_hopt['colsample_bylevel'],
+                                  gamma=best_hopt['gamma'],
+                                  alpha=best_hopt['alpha'],
+                                  lambda_=best_hopt['lambda'],
+                                  n_jobs=8, tree_method='gpu_hist')
+        else:
+            model = XGBClassifier(n_estimators=int(best_hopt['n_estimators']),
+                                  max_depth=int(best_hopt['max_depth']),
+                                  learning_rate=best_hopt['learning_rate'],
+                                  subsample=best_hopt['subsample'],
+                                  colsample_bytree=best_hopt['colsample_bytree'],
+                                  colsample_bylevel=best_hopt['colsample_bylevel'],
+                                  gamma=best_hopt['gamma'],
+                                  alpha=best_hopt['alpha'],
+                                  lambda_=best_hopt['lambda'],
+                                  n_jobs=8)
 
         scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
                                                 X_additional=self.X_test,
@@ -229,15 +241,27 @@ class ModelsManager:
         bagging_temperature = optimization_parameters['bagging_temperature']
         leaf_estimation_iterations = int(optimization_parameters['leaf_estimation_iterations'])
 
-        model = CatBoostClassifier(n_estimators=number_estimators,
-                                   learning_rate=learning_rate,
-                                   random_strength=random_strength,
-                                   max_depth=max_depth,
-                                   l2_leaf_reg=l2_leaf_reg,
-                                   bagging_temperature=bagging_temperature,
-                                   leaf_estimation_iterations=leaf_estimation_iterations,
-                                   allow_writing_files=False,
-                                   verbose=False)
+        if params.DEVICE == 'cuda':
+            model = CatBoostClassifier(n_estimators=number_estimators,
+                                       learning_rate=learning_rate,
+                                       random_strength=random_strength,
+                                       max_depth=max_depth,
+                                       l2_leaf_reg=l2_leaf_reg,
+                                       bagging_temperature=bagging_temperature,
+                                       leaf_estimation_iterations=leaf_estimation_iterations,
+                                       allow_writing_files=False,
+                                       verbose=False,
+                                       task_type='GPU')
+        else:
+            model = CatBoostClassifier(n_estimators=number_estimators,
+                                       learning_rate=learning_rate,
+                                       random_strength=random_strength,
+                                       max_depth=max_depth,
+                                       l2_leaf_reg=l2_leaf_reg,
+                                       bagging_temperature=bagging_temperature,
+                                       leaf_estimation_iterations=leaf_estimation_iterations,
+                                       allow_writing_files=False,
+                                       verbose=False)
 
         scaled_X_train, scaled_X_val = scaling(X_train=self.X_train,
                                                X_additional=self.X_val,
@@ -274,15 +298,27 @@ class ModelsManager:
         self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
-        model = CatBoostClassifier(n_estimators=int(best_hopt['n_estimators']),
-                                   max_depth=int(best_hopt['max_depth']),
-                                   learning_rate=best_hopt['learning_rate'],
-                                   random_strength=int(best_hopt['random_strength']),
-                                   l2_leaf_reg=int(best_hopt['l2_leaf_reg']),
-                                   bagging_temperature=best_hopt['bagging_temperature'],
-                                   leaf_estimation_iterations=int(best_hopt['leaf_estimation_iterations']),
-                                   allow_writing_files=False,
-                                   verbose=False)
+        if params.DEVICE == 'cuda':
+            model = CatBoostClassifier(n_estimators=int(best_hopt['n_estimators']),
+                                       max_depth=int(best_hopt['max_depth']),
+                                       learning_rate=best_hopt['learning_rate'],
+                                       random_strength=int(best_hopt['random_strength']),
+                                       l2_leaf_reg=int(best_hopt['l2_leaf_reg']),
+                                       bagging_temperature=best_hopt['bagging_temperature'],
+                                       leaf_estimation_iterations=int(best_hopt['leaf_estimation_iterations']),
+                                       allow_writing_files=False,
+                                       verbose=False,
+                                       task_type='GPU')
+        else:
+            model = CatBoostClassifier(n_estimators=int(best_hopt['n_estimators']),
+                                       max_depth=int(best_hopt['max_depth']),
+                                       learning_rate=best_hopt['learning_rate'],
+                                       random_strength=int(best_hopt['random_strength']),
+                                       l2_leaf_reg=int(best_hopt['l2_leaf_reg']),
+                                       bagging_temperature=best_hopt['bagging_temperature'],
+                                       leaf_estimation_iterations=int(best_hopt['leaf_estimation_iterations']),
+                                       allow_writing_files=False,
+                                       verbose=False)
 
         scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
                                                 X_additional=self.X_test,
@@ -403,7 +439,6 @@ class ModelsManager:
         nec = int(optimization_parameters['N_ensemble_configurations'])
 
         device = torch.device(params.DEVICE if torch.cuda.is_available() else "cpu")
-        print("Using device: ", device)
 
         model = TabPFNClassifier(device=device, N_ensemble_configurations=nec)
 
@@ -429,7 +464,6 @@ class ModelsManager:
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         device = torch.device(params.DEVICE if torch.cuda.is_available() else "cpu")
-        print("Using device: ", device)
 
         model = TabPFNClassifier(device=device, N_ensemble_configurations=int(best_hopt['N_ensemble_configurations']))
 
@@ -539,6 +573,12 @@ class ModelsManager:
     # === Homological Convolutional Neural Network Optimization === #
 
     def hcnn_net_objective(self, optimization_parameters):
+        try:
+            shutil.rmtree('./lightning_logs', ignore_errors=False)
+            print('Removed lightning_logs')
+        except:
+            pass
+
         n_filters_l1 = int(optimization_parameters['n_filters_l1'])
         n_filters_l2 = int(optimization_parameters['n_filters_l2'])
         tmfg_iterations = int(optimization_parameters['tmfg_iterations'])
@@ -552,24 +592,27 @@ class ModelsManager:
         local_y_val = self.y_val.copy()
         local_y_test = self.y_test.copy()
 
-        model = HCNN(X_train=local_X_train,
-                     X_val=local_X_val,
-                     X_test=local_X_test,
-                     y_train=local_y_train,
-                     y_val=local_y_val,
-                     y_test=local_y_test,
-                     n_filters_l1=n_filters_l1,
-                     n_filters_l2=n_filters_l2,
-                     tmfg_repetitions=tmfg_iterations,
-                     tmfg_confidence=tmfg_confidence,
-                     tmfg_similarity=tmfg_similarity)
+        try:
+            model = HCNN(X_train=local_X_train,
+                         X_val=local_X_val,
+                         X_test=local_X_test,
+                         y_train=local_y_train,
+                         y_val=local_y_val,
+                         y_test=local_y_test,
+                         n_filters_l1=n_filters_l1,
+                         n_filters_l2=n_filters_l2,
+                         tmfg_repetitions=tmfg_iterations,
+                         tmfg_confidence=tmfg_confidence,
+                         tmfg_similarity=tmfg_similarity)
 
-        model.data_preparation_pipeline()
+            model.data_preparation_pipeline()
 
-        model.fit()
-        targets, preds, probs = model.evaluate()
-        score = f1_score(targets, preds, average='macro')
-        return -score
+            model.fit()
+            targets, preds, probs = model.evaluate()
+            score = f1_score(targets, preds, average='macro')
+            return -score
+        except:
+            return 0
 
     @measure_execution_time
     def hcnn_net_optimize(self, trial):
@@ -584,6 +627,13 @@ class ModelsManager:
         return best
 
     def hcnn_out_of_sample_test(self, best_hopt):
+
+        try:
+            shutil.rmtree('./lightning_logs', ignore_errors=False)
+            print('Removed lightning_logs')
+        except:
+            pass
+
         self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
         self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
@@ -631,6 +681,12 @@ class ModelsManager:
         best_hopt['number_of_selected_features'] = [number_of_selected_features]
         write_json_file(best_hopt, root_folder + 'best_hopt.csv')
         merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+
+        try:
+            shutil.rmtree('./lightning_logs', ignore_errors=False)
+            print('Removed lightning_logs')
+        except:
+            pass
 
     # === Homological Random Forest Optimization === #
 
@@ -777,7 +833,7 @@ class ModelsManager:
                                    'alpha': hp.choice('alpha',
                                                       [0, hp.uniform('alpha_', 1e-4, 1e2)]),
                                    'lambda': hp.choice('lambda',
-                                                       [0, hp.uniform('lambda_', 1-4, 1e2)]),
+                                                       [0, hp.uniform('lambda_', 1 - 4, 1e2)]),
                                    'gamma': hp.choice('gamma',
                                                       [0, hp.uniform('gamma_', 1e-4, 1e2)]),
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
@@ -1047,7 +1103,7 @@ class ModelsManager:
                                      tmfg_confidence=tmfg_confidence,
                                      tmfg_similarity=tmfg_similarity,
                                      seed=self.seed)
-        local_X_train, local_X_val, local_X_test, number_selected_features  = hdm.get_homological_data()
+        local_X_train, local_X_val, local_X_test, number_selected_features = hdm.get_homological_data()
 
         if local_X_train.shape[1] == 0:
             return 0

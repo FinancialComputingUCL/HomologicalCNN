@@ -41,7 +41,7 @@ class TMFG_Bootstrapped:
         array_dict = []
 
         if self.parallel:
-            pool = Pool(processes=4)
+            pool = Pool(processes=8)
             results = [
                 pool.apply_async(self.perform_bootstrapping, [self.numbered_edges_nx_tmfg, self.nx_tmfg, self.df]) for
                 _ in range(self.number_of_repetitions)]
