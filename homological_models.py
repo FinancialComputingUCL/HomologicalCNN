@@ -730,7 +730,7 @@ class HCNN_model1D(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.PolynomialLR(optimizer, total_iters=100, power=2)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=30, T_mult=2, eta_min=self.lr/5, last_epoch=-1)
         return [optimizer], [scheduler]
 
     def set_lr(self, lr):

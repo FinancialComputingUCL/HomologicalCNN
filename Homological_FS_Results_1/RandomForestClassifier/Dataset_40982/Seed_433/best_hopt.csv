@@ -1,2 +1,0 @@
-max_depth,min_samples_leaf,min_samples_split,n_estimators,execution_time
-50.0,8.0,10.0,800.0,355.553576

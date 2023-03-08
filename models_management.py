@@ -30,6 +30,8 @@ class ModelsManager:
         self.y_val = y_val
         self.y_test = y_test
 
+        self.root_folder = None
+
         self.available_models = ['RandomForest',
                                  'XGBoost',
                                  'CatBoost',
@@ -108,16 +110,16 @@ class ModelsManager:
         return preds, probs
 
     def random_forest_manager(self):
-        root_folder = f'./Homological_FS/RandomForestClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/RandomForestClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.random_forest_optimize(trial_hopt)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.random_forest_out_of_sample_test(best_hopt=best_hopt)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === XGBoost Optimization === #
 
@@ -219,16 +221,16 @@ class ModelsManager:
         return preds, probs
 
     def xgboost_manager(self):
-        root_folder = f'./Homological_FS/XGBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/XGBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.xgboost_optimize(trial_hopt)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.xgboost_out_of_sample_test(best_hopt=best_hopt)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === CatBoost Optimization === #
 
@@ -332,16 +334,16 @@ class ModelsManager:
         return preds, probs
 
     def cat_boost_manager(self):
-        root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.cat_boost_optimize(trial_hopt)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.cat_boost_out_of_sample_test(best_hopt=best_hopt)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === LightGBM Optimization === #
 
@@ -422,16 +424,16 @@ class ModelsManager:
         reg_lambda = [0, 0.01, 1, 5, 10, 20, 50, 100]
         choices_dict = {'reg_alpha': reg_alpha, 'reg_lambda': reg_lambda}
 
-        root_folder = f'./Homological_FS/LightGBM_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/LightGBM_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.lightgbm_optimize(trial_hopt, choices_dict=choices_dict)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.lightgbm_out_of_sample_test(best_hopt=best_hopt, choices_dict=choices_dict)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === TabPFN Optimization === #
 
@@ -479,16 +481,16 @@ class ModelsManager:
         return preds, probs
 
     def tab_pfn_manager(self):
-        root_folder = f'./Homological_FS/TabPFN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/TabPFN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.tab_pfn_optimize(trial_hopt)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.tab_pfn_out_of_sample_test(best_hopt=best_hopt)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === TabNet Optimization === #
 
@@ -559,25 +561,20 @@ class ModelsManager:
         return preds, probs
 
     def tab_net_manager(self):
-        root_folder = f'./Homological_FS/TabNet_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/TabNet_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.tab_net_optimize(trial_hopt)
         best_hopt = update_keys(d=best_hopt)
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
 
         preds, probs = self.tab_net_out_of_sample_test(best_hopt=best_hopt)
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological Convolutional Neural Network Optimization === #
 
     def hcnn_net_objective(self, optimization_parameters):
-        try:
-            shutil.rmtree('./lightning_logs', ignore_errors=False)
-            print('Removed lightning_logs')
-        except:
-            pass
 
         n_filters_l1 = int(optimization_parameters['n_filters_l1'])
         n_filters_l2 = int(optimization_parameters['n_filters_l2'])
@@ -603,7 +600,9 @@ class ModelsManager:
                          n_filters_l2=n_filters_l2,
                          tmfg_repetitions=tmfg_iterations,
                          tmfg_confidence=tmfg_confidence,
-                         tmfg_similarity=tmfg_similarity)
+                         tmfg_similarity=tmfg_similarity,
+                         root_folder=self.root_folder+'hyperopt/',
+                         )
 
             model.data_preparation_pipeline()
 
@@ -627,12 +626,6 @@ class ModelsManager:
         return best
 
     def hcnn_out_of_sample_test(self, best_hopt):
-
-        try:
-            shutil.rmtree('./lightning_logs', ignore_errors=False)
-            print('Removed lightning_logs')
-        except:
-            pass
 
         self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
         self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
@@ -658,7 +651,8 @@ class ModelsManager:
                      n_filters_l2=int(best_hopt['n_filters_l2']),
                      tmfg_repetitions=int(best_hopt['tmfg_iterations']),
                      tmfg_confidence=best_hopt['tmfg_confidence'],
-                     tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']]
+                     tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
+                     root_folder=self.root_folder+'out_of_sample/',
                      )
 
         model.data_preparation_pipeline()
@@ -670,8 +664,8 @@ class ModelsManager:
         return None, preds, probs
 
     def hcnn_manager(self):
-        root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.hcnn_net_optimize(trial_hopt)
@@ -679,14 +673,12 @@ class ModelsManager:
 
         number_of_selected_features, preds, probs = self.hcnn_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_of_selected_features'] = [number_of_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
-
-        try:
-            shutil.rmtree('./lightning_logs', ignore_errors=False)
-            print('Removed lightning_logs')
-        except:
-            pass
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
+        shutil.rmtree(path=(self.root_folder + 'hyperopt/logs/'))
+        shutil.rmtree(path=(self.root_folder + 'out_of_sample/logs/'))
+        shutil.rmtree(path=(self.root_folder + 'hyperopt/'))
+        shutil.rmtree(path=(self.root_folder + 'out_of_sample/'))
 
     # === Homological Random Forest Optimization === #
 
@@ -765,8 +757,8 @@ class ModelsManager:
         return preds, probs, number_selected_features
 
     def h_random_forest_manager(self):
-        root_folder = f'./Homological_FS/HRandomForest_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HRandomForest_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_random_forest_optimize(trial_hopt)
@@ -774,8 +766,8 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_random_forest_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological XGBoost Optimization=== #
 
@@ -878,8 +870,8 @@ class ModelsManager:
         return preds, probs, number_selected_features
 
     def h_xgboost_manager(self):
-        root_folder = f'./Homological_FS/HXGBoost_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HXGBoost_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_xgboost_optimize(trial_hopt)
@@ -887,8 +879,8 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_xgboost_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological TabPFN Optimization === #
 
@@ -959,8 +951,8 @@ class ModelsManager:
         return preds, probs, number_selected_features
 
     def h_tab_pfn_manager(self):
-        root_folder = f'./Homological_FS/HTabPFN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HTabPFN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_tab_pfn_optimize(trial_hopt)
@@ -968,8 +960,8 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_tab_pfn_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological CatBoost Optimization === #
 
@@ -1072,8 +1064,8 @@ class ModelsManager:
         return preds, probs, number_selected_features
 
     def h_cat_boost_manager(self):
-        root_folder = f'./Homological_FS/HCatBoost_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HCatBoost_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_cat_boost_optimize(trial_hopt)
@@ -1081,8 +1073,8 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_cat_boost_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological LightGBM Optimization === #
 
@@ -1187,8 +1179,8 @@ class ModelsManager:
 
         choices_dict = {'reg_alpha': reg_alpha, 'reg_lambda': reg_lambda}
 
-        root_folder = f'./Homological_FS/HLightGBM_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HLightGBM_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_lightgbm_optimize(trial_hopt, choices_dict=choices_dict)
@@ -1196,8 +1188,8 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_lightgbm_out_of_sample_test(best_hopt=best_hopt, choices_dict=choices_dict)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Homological TabNet Optimization ===
 
@@ -1288,8 +1280,8 @@ class ModelsManager:
         return preds, probs, number_selected_features
 
     def h_tab_net_manager(self):
-        root_folder = f'./Homological_FS/HTabNet_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(root_folder)
+        self.root_folder = f'./Homological_FS/HTabNet_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
         best_hopt = self.h_tab_net_optimize(trial_hopt)
@@ -1297,5 +1289,5 @@ class ModelsManager:
 
         preds, probs, number_selected_features = self.h_tab_net_out_of_sample_test(best_hopt=best_hopt)
         best_hopt['number_selected_features'] = [number_selected_features]
-        write_json_file(best_hopt, root_folder + 'best_hopt.csv')
-        merge_probs_preds_classification(probs, preds, self.y_test, root_folder + 'pobs_preds.csv')
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')

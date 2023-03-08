@@ -1,2 +1,0 @@
-bagging_temperature,l2_leaf_reg,leaf_estimation_iterations,learning_rate,max_depth,n_estimators,random_strength,execution_time
-0.25189486262762617,3.0,6.0,0.5024087555792723,3.0,2100.0,3.0,253.454017
