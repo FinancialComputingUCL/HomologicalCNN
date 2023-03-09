@@ -1,19 +1,15 @@
-from data_management import *
-from models_management import *
-from HCNN import *
-import params
-
 import argparse
+
+from models_management import *
 
 parser = argparse.ArgumentParser(description='HCNN Experiments.')
 parser.add_argument('--model', type=str, default='HCNN', help="Model to be run.")
-parser.add_argument('--dataset_id', type=int, default=16, help="Dataset to be considered.")
-parser.add_argument('--seed', type=int, default=0, help="Seed to be used.")
+parser.add_argument('--dataset_id', type=int, default=14, help="Dataset to be considered.") #16
+parser.add_argument('--seed', type=int, default=408, help="Seed to be used.") #0
 args = parser.parse_args()
 
 if __name__ == '__main__':
 
-    #for seed in params.SEEDS_LIST:
     seed = args.seed
     dm = DataManager(dataset_id=args.dataset_id, seed=seed)
     X_train, X_val, X_test, y_train, y_val, y_test = dm.get_data()

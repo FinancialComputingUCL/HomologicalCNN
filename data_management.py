@@ -74,9 +74,9 @@ class DataManager:
         upper_bound_train_val = int((len(self.X) - upper_bound_train_test) * params.VALIDATION_PERCENTAGE)
 
         # Isolate numerical features.
-        self.X = self.X[self.numerical_features]
+        '''self.X = self.X[self.numerical_features]
         self.X.reset_index(drop=True, inplace=True)
-        self.X.columns = np.arange(0, self.X.shape[1]).tolist()
+        self.X.columns = np.arange(0, self.X.shape[1]).tolist()'''
 
         # Isolate categorical features.
         '''self.X_cat = self.X[self.categorical_features]

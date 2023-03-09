@@ -661,7 +661,7 @@ class ModelsManager:
         targets, preds, probs = model.predict()
         score = classification_report(self.y_test, preds)
         print(score)
-        return None, preds, probs
+        return model.number_of_selected_features, preds, probs
 
     def hcnn_manager(self):
         self.root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
@@ -672,7 +672,11 @@ class ModelsManager:
         best_hopt = update_keys(d=best_hopt)
 
         number_of_selected_features, preds, probs = self.hcnn_out_of_sample_test(best_hopt=best_hopt)
-        best_hopt['number_of_selected_features'] = [number_of_selected_features]
+
+        best_hopt['number_of_selected_features'] = number_of_selected_features
+        best_hopt['tmfg_confidence'] = self.tmfg_pvalues_options[best_hopt['tmfg_confidence']]
+        best_hopt['tmfg_similarity'] = self.tmfg_similarities_options[best_hopt['tmfg_similarity']]
+
         write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
         shutil.rmtree(path=(self.root_folder + 'hyperopt/logs/'))
