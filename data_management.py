@@ -1,14 +1,8 @@
-import pandas as pd
-import numpy as np
-import networkx as nx
-
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
-
-import openml.datasets as open_data
+import openml
 
 import params
-from tmfg_core import *
 from tmfg_bootstrapped import *
 
 
@@ -47,15 +41,10 @@ class DataManager:
         return numerical_features, categorical_features
 
     def __download_open_ml_dataset(self):
-        dataset = open_data.get_dataset(self.dataset_id)
-        numerical_features, categorical_features = self.__get_feature_types(dataset)
-        self.numerical_features = numerical_features
-        self.categorical_features = categorical_features
-
-        self.X, _, _, _ = dataset.get_data(dataset_format="dataframe")
-        self.X.dropna(inplace=True)
-        self.y = self.X.iloc[:, -1:]
-        self.X.drop([self.y.columns[0]], axis=1, inplace=True)
+        task = openml.tasks.get_task(self.dataset_id)
+        dataset = task.get_dataset()
+        self.X, self.y, categorical_indicator, attribute_names = dataset.get_data(dataset_format="dataframe",
+                                                                                  target=dataset.default_target_attribute)
 
         label_encoder = LabelEncoder()
         self.y = label_encoder.fit_transform(np.array(self.y).ravel())
