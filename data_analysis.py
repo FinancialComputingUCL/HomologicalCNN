@@ -31,8 +31,8 @@ if __name__ == '__main__':
             params_dict = []
             for seed in seeds:
                 try:
-                    probs_preds = pd.read_csv(f'./Results/Exp_2/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
-                    best_hopt = pd.read_csv(f'./Results/Exp_2/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
+                    probs_preds = pd.read_csv(f'./Results/Exp_3/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
+                    best_hopt = pd.read_csv(f'./Results/Exp_3/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
 
                     target = probs_preds['Target']
                     pred = probs_preds['Pred']

@@ -1,6 +1,9 @@
+import time
+import shutil
+
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
-import openml
+import openml.datasets as open_data
 
 import params
 from tmfg_bootstrapped import *
@@ -41,10 +44,20 @@ class DataManager:
         return numerical_features, categorical_features
 
     def __download_open_ml_dataset(self):
-        task = openml.tasks.get_task(self.dataset_id)
-        dataset = task.get_dataset()
-        self.X, self.y, categorical_indicator, attribute_names = dataset.get_data(dataset_format="dataframe",
-                                                                                  target=dataset.default_target_attribute)
+        while True:
+            try:
+                try:
+                    shutil.rmtree('/home/abriola/.cache/openml/org/openml/')
+                except:
+                    print('Unable to delete OpenML cache folder.')
+                    pass
+                dataset = open_data.get_dataset(self.dataset_id)
+                self.X, self.y, categorical_indicator, attribute_names = dataset.get_data(dataset_format="dataframe", target=dataset.default_target_attribute)
+                break
+            except:
+                time.sleep(30)
+                print(f'Downloading error for dataset {self.dataset_id}. Trying again in 30 secs...')
+                continue
 
         label_encoder = LabelEncoder()
         self.y = label_encoder.fit_transform(np.array(self.y).ravel())
