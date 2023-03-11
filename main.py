@@ -3,7 +3,7 @@ import argparse
 from models_management import *
 
 parser = argparse.ArgumentParser(description='HCNN Experiments.')
-parser.add_argument('--model', type=str, default='TabularTransformer', help="Model to be run.")
+parser.add_argument('--model', type=str, default='HCNN', help="Model to be run.")
 parser.add_argument('--dataset_id', type=int, default=16, help="Dataset to be considered.")
 parser.add_argument('--seed', type=int, default=0, help="Seed to be used.")
 args = parser.parse_args()

@@ -1,12 +1,15 @@
+import os
 import time
 import shutil
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
 import openml.datasets as open_data
+import openml
 
 import params
 from tmfg_bootstrapped import *
+from models_utils import *
 
 
 class DataManager:
@@ -15,6 +18,7 @@ class DataManager:
         self.seed = seed
         np.random.seed(self.seed)
 
+        self.root_folder = None
         self.X = None
         self.y = None
         self.X_train = None
@@ -45,14 +49,16 @@ class DataManager:
 
     def __download_open_ml_dataset(self):
         while True:
+            self.root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/openml/'
+            generate_folder_structure(self.root_folder)
             try:
-                try:
-                    shutil.rmtree('/home/abriola/.cache/openml/org/openml/')
-                except:
-                    print('Unable to delete OpenML cache folder.')
-                    pass
+                shutil.rmtree(self.root_folder)
+                openml.config.cache_directory = os.path.expanduser(self.root_folder)
+
                 dataset = open_data.get_dataset(self.dataset_id)
                 self.X, self.y, categorical_indicator, attribute_names = dataset.get_data(dataset_format="dataframe", target=dataset.default_target_attribute)
+
+                shutil.rmtree(self.root_folder)
                 break
             except:
                 time.sleep(30)
