@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-from skorch import NeuralNetClassifier
 from pytorch_lightning import LightningModule
 from torch.nn import functional as F
 
@@ -730,8 +729,8 @@ class HCNN_model1D(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=30, T_mult=2, eta_min=self.lr/5, last_epoch=-1)
-        return [optimizer], [scheduler]
+        #scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=self.lr, max_lr=self.lr*10, step_size_up=10, mode="exp_range")
+        return optimizer #[scheduler]
 
     def set_lr(self, lr):
         self.lr = lr

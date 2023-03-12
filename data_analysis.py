@@ -31,8 +31,8 @@ if __name__ == '__main__':
             params_dict = []
             for seed in seeds:
                 try:
-                    probs_preds = pd.read_csv(f'./Results/Exp_3/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
-                    best_hopt = pd.read_csv(f'./Results/Exp_3/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
+                    probs_preds = pd.read_csv(f'./Results/Exp_1/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
+                    best_hopt = pd.read_csv(f'./Results/Exp_1/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
 
                     target = probs_preds['Target']
                     pred = probs_preds['Pred']
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         try:
             t_stat, p_val = ttest_rel(final_analysis_df['TabPFN_Classifier'], final_analysis_df['HCNN_Classifier'])
 
-            if p_val < 0.001:
+            if p_val < 0.03:
                 print("The two classifiers are statistically different.")
                 statistically_different += 1
                 statistically_different_list.append(dataset)
