@@ -1,15 +1,13 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from pytorch_lightning import loggers as pl_loggers
 
-import params
 from homological_models import *
 
 
 class HCNN:
     def __init__(self, X_train, X_val, X_test, y_train, y_val, y_test,
                  n_filters_l1, n_filters_l2, tmfg_repetitions, tmfg_confidence,
-                 tmfg_similarity, max_epochs=params.MAX_EPOCHS, T=1, root_folder=None):
+                 tmfg_similarity, max_epochs=params.MAX_EPOCHS, T=1, root_folder=None, filtering_type=None):
         self.number_of_selected_features, self.shape_tetrahedra, self.shape_triangles, self.shape_simplex, self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test = h_input_transform(
             X_train=X_train,
             X_val=X_val,
@@ -19,7 +17,8 @@ class HCNN:
             y_test=y_test,
             tmfg_repetitions=tmfg_repetitions,
             tmfg_confidence=tmfg_confidence,
-            tmfg_similarity=tmfg_similarity)
+            tmfg_similarity=tmfg_similarity,
+            filtering_type=filtering_type)
 
         self.T = T
         self.n_filters_l1 = n_filters_l1
@@ -39,7 +38,7 @@ class HCNN:
         # Set learning rate based on OpenAI's implementation.
         self.model.set_lr(get_openai_lr(self.model))
 
-        self.early_stopping = EarlyStopping('val_loss', mode='min')
+        self.early_stopping = EarlyStopping('val_loss', mode='min', patience=params.EARLY_STOPPING_PATIENCE)
         self.checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss", mode="min")
 
         self.logger_folder = root_folder + 'logs'
@@ -50,14 +49,14 @@ class HCNN:
                                    enable_progress_bar=False,
                                    enable_model_summary=False,
                                    callbacks=[self.early_stopping, self.checkpoint_callback],
-                                   default_root_dir=self.logger_folder
+                                   default_root_dir=self.logger_folder,
                                    )
         else:
             self.trainer = Trainer(max_epochs=max_epochs,
                                    enable_progress_bar=False,
                                    enable_model_summary=False,
                                    callbacks=[self.early_stopping, self.checkpoint_callback],
-                                   default_root_dir=self.logger_folder
+                                   default_root_dir=self.logger_folder,
                                    )
 
         self.train_dataloader, self.val_dataloader, self.test_dataloader = prepare_dataloaders(self.X_train,
@@ -72,23 +71,12 @@ class HCNN:
         self.trainer.fit(self.model, train_dataloaders=self.train_dataloader, val_dataloaders=self.val_dataloader)
 
     def evaluate(self):
-        self.model.eval()
-        self.trainer = Trainer(default_root_dir=self.logger_folder)
-        self.trainer.validate(self.model, dataloaders=self.val_dataloader, verbose=False)
+        self.trainer.validate(self.model, dataloaders=self.val_dataloader, verbose=False, ckpt_path='best')
         return self.model.val_targets, self.model.val_preds, self.model.val_probs
 
     def predict(self):
-        self.model.eval()
-        self.trainer = Trainer(default_root_dir=self.logger_folder)
-        self.best_model = HCNN_model1D.load_from_checkpoint(self.checkpoint_callback.best_model_path, T=self.T,
-                                                            FILTERS_L1=self.n_filters_l1,
-                                                            FILTERS_L2=self.n_filters_l2,
-                                                            last_layer_neurons=self.last_layer_neurons,
-                                                            NF_4=self.shape_tetrahedra,
-                                                            NF_3=self.shape_triangles,
-                                                            NF_2=self.shape_simplex)
-        self.trainer.test(self.best_model, dataloaders=self.test_dataloader, verbose=False)
-        return self.best_model.test_targets, self.best_model.test_preds, self.best_model.test_probs
+        self.trainer.test(self.model, dataloaders=self.test_dataloader, verbose=False, ckpt_path='best')
+        return self.model.test_targets, self.model.test_preds, self.model.test_probs
 
     def data_preparation_pipeline(self):
         return self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.model, self.number_of_selected_features

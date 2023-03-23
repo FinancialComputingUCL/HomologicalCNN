@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
-
 from pytorch_lightning import LightningModule
 from torch.nn import functional as F
 
 from homological_utils import *
-import params
 
 
 class HCNN_model2D(nn.Module):
@@ -405,8 +403,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=(FILTERS_L2 * 3), out_features=((FILTERS_L2 * 3)+32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=((FILTERS_L2 * 3)+32), out_features=((FILTERS_L2 * 3)+64)),
-                nn.Linear(in_features=((FILTERS_L2 * 3)+64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=((FILTERS_L2 * 3)+64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is not None) and (self.NF_2 is not None):
@@ -441,8 +441,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2)+32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=((FILTERS_L2 * 2)+32), out_features=((FILTERS_L2 * 2)+64)),
-                nn.Linear(in_features=((FILTERS_L2 * 2)+64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=((FILTERS_L2 * 2)+64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is None) and (self.NF_2 is not None):
@@ -463,8 +465,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2+32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=(FILTERS_L2+32), out_features=(FILTERS_L2+64)),
-                nn.Linear(in_features=(FILTERS_L2+64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=(FILTERS_L2+64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is None):
@@ -484,8 +488,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
-                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is not None):
@@ -519,8 +525,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is not None) and (self.NF_2 is None):
@@ -540,8 +548,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
-                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is None):
@@ -575,8 +585,10 @@ class HCNN_model1D(LightningModule):
 
             self.logic_mlp = nn.Sequential(
                 nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
+                nn.ReLU6(),
                 nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons)
+                nn.ReLU6(),
+                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons),
             )
 
     def forward(self, tetrahedra=None, triangles=None, simplex=None):
@@ -729,8 +741,8 @@ class HCNN_model1D(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), self.lr)
-        #scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=self.lr, max_lr=self.lr*10, step_size_up=10, mode="exp_range")
-        return optimizer #[scheduler]
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, eta_min=self.lr/100, last_epoch=-1)
+        return [optimizer], [scheduler]
 
     def set_lr(self, lr):
         self.lr = lr

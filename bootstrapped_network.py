@@ -1,7 +1,6 @@
 from collections import Counter
 from multiprocessing import Pool
 
-from scipy.stats import pearsonr, spearmanr, kendalltau
 import networkx as nx
 
 from tmfg_core import *
@@ -18,7 +17,7 @@ class Bootstrapped_Network:
         self.confidence_level = confidence_level
         self.bootstrapping_side = bootstrapping_side
 
-        _, _, self.adjacency_matrix = TMFG(self.original_correlation_matrix).compute_TMFG()
+        _, _, self.adjacency_matrix = TMFG(np.square(self.original_correlation_matrix)).compute_TMFG()
         self.nx_network = nx.from_numpy_matrix(self.adjacency_matrix)
 
         self.original_network = copy.copy(self.nx_network)
@@ -35,13 +34,14 @@ class Bootstrapped_Network:
             raise Exception("Correlation type for similarity matrix not supported.")
 
     def average_matrix(self, corr_matrices):
-        n_matrices = len(corr_matrices)
         n = corr_matrices[0].shape[0]
-        sum_matrix = np.zeros((n, n))
-        for matrix in corr_matrices:
-            sum_matrix += matrix
-        avg_matrix = sum_matrix / n_matrices
-        return avg_matrix
+        stacked_matrices = np.stack(corr_matrices, axis=2)
+        average_matrix = np.zeros((n, n))
+        for i in range(n):
+            for j in range(n):
+                row = stacked_matrices[i, j, :]
+                average_matrix[i, j] = np.mean(row)
+        return average_matrix
 
     def median_matrix(self, corr_matrices):
         n = corr_matrices[0].shape[0]
@@ -98,9 +98,9 @@ class Bootstrapped_Network:
             return self.nx_network
 
         elif self.bootstrapping_side == 'similarity_matrix':
-            self.cliques, self.separators, local_adjacency_matrix = TMFG(np.abs(median_similarity_matrix)).compute_TMFG() # Absolute correlations used to compute TMFG.
+            cliques, separators, local_adjacency_matrix = TMFG(np.square(median_similarity_matrix)).compute_TMFG()
             self.nx_network = nx.from_numpy_matrix(local_adjacency_matrix)
-            return self.cliques, self.separators, self.nx_network
+            return cliques, separators, self.nx_network
 
     def perform_bootstrapping(self, numbered_edges, g, random_matrix):
         numbered_edges = numbered_edges.copy()

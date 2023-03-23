@@ -1,11 +1,11 @@
 import math
 
 from pytorch_lightning.trainer.supporters import CombinedLoader
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
 from torch.utils.data import DataLoader
 
+import params
 from tmfg_bootstrapped import *
-from tmfg_core import *
 from bootstrapped_network import *
 
 
@@ -52,19 +52,19 @@ def get_final_X_2(X, final_b_cliques_2):
 
 
 def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repetitions, tmfg_confidence,
-                      tmfg_similarity):
-    cliques, separators, original_tmfg, _, adjacency_matrix = TMFG_Bootstrapped(X_train,
-                                                                                tmfg_similarity,
-                                                                                tmfg_repetitions,
-                                                                                tmfg_confidence,
-                                                                                parallel=True).compute_tmfg_bootstrapping()
-
-    # Uncomment this to run the statistically robust version of the tmfg correlation matrix.
-    '''cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
-                                                                 tmfg_similarity,
-                                                                 tmfg_repetitions,
-                                                                 tmfg_confidence, 'similarity_matrix', parallel=True).compute_bootstrapping()
-    original_tmfg = adjacency_matrix'''
+                      tmfg_similarity, filtering_type):
+    if filtering_type == 'TMFG_Bootstrapping':
+        cliques, separators, original_tmfg, _, adjacency_matrix = TMFG_Bootstrapped(X_train,
+                                                                                    tmfg_similarity,
+                                                                                    tmfg_repetitions,
+                                                                                    tmfg_confidence,
+                                                                                    parallel=True).compute_tmfg_bootstrapping()
+    else:
+        cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
+                                                                     tmfg_similarity,
+                                                                     tmfg_repetitions,
+                                                                     tmfg_confidence, 'similarity_matrix', parallel=True).compute_bootstrapping()
+        original_tmfg = adjacency_matrix
 
     c = nx.degree_centrality(adjacency_matrix)
 
@@ -115,6 +115,8 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         if sorted(c) in b_cliques_2:
             final_b_cliques_2.append(sorted(c))
 
+    '''
+    # Uncomment to prevent overlapping geometrical structures.
     new_b_cliques_3 = []
 
     if len(final_b_cliques_4) == 0:
@@ -161,7 +163,7 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
             if not flag:
                 new_b_cliques_2.append(t)
 
-    final_b_cliques_2 = new_b_cliques_2
+    final_b_cliques_2 = new_b_cliques_2'''
 
     try:
         if x is None:
@@ -206,7 +208,13 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         final_test_X_2 = None
 
     try:
-        scaler = RobustScaler()
+        scaler = None
+        if params.SCALING_SCHEME == 'RobustScaler':
+            scaler = RobustScaler()
+        elif params.SCALING_SCHEME == 'StandardScaler':
+            scaler = StandardScaler()
+        elif params.SCALING_SCHEME == 'MinMaxScaler':
+            scaler = MinMaxScaler()
 
         final_train_X_4 = scaler.fit_transform(final_train_X_4)
         final_val_X_4 = scaler.transform(final_val_X_4)
@@ -215,7 +223,13 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         pass
 
     try:
-        scaler = RobustScaler()
+        scaler = None
+        if params.SCALING_SCHEME == 'RobustScaler':
+            scaler = RobustScaler()
+        elif params.SCALING_SCHEME == 'StandardScaler':
+            scaler = StandardScaler()
+        elif params.SCALING_SCHEME == 'MinMaxScaler':
+            scaler = MinMaxScaler()
 
         final_train_X_3 = scaler.fit_transform(final_train_X_3)
         final_val_X_3 = scaler.transform(final_val_X_3)
@@ -224,7 +238,13 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         pass
 
     try:
-        scaler = RobustScaler()
+        scaler = None
+        if params.SCALING_SCHEME == 'RobustScaler':
+            scaler = RobustScaler()
+        elif params.SCALING_SCHEME == 'StandardScaler':
+            scaler = StandardScaler()
+        elif params.SCALING_SCHEME == 'MinMaxScaler':
+            scaler = MinMaxScaler()
 
         final_train_X_2 = scaler.fit_transform(final_train_X_2)
         final_val_X_2 = scaler.transform(final_val_X_2)
@@ -564,4 +584,4 @@ def transform_outputs(outputs):
 
 def get_openai_lr(model):
     num_params = sum(p.numel() for p in model.parameters())
-    return 0.003239 - 0.0001395 * math.log(num_params)
+    return 0.01 #0.003239 - 0.0001395 * math.log(num_params)

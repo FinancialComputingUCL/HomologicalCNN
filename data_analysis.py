@@ -16,7 +16,7 @@ if __name__ == '__main__':
               'TabPFN_Classifier',
               'HCNN_Classifier',
               ]
-    datasets = [11, 14, 15, 16, 18, 22, 37, 40, 54, 458, 1049, 1050, 1063, 1068, 1462, 1464, 1494, 1510, 40982, 40994]
+    datasets = [11, 14, 15, 16, 18, 22, 37, 54, 458, 1049, 1050, 1063, 1068, 1462, 1464, 1494, 1510, 40982, 40994]
 
     final_analysis_df = {}
     statistically_different = 0
@@ -26,13 +26,14 @@ if __name__ == '__main__':
 
     for dataset in datasets:
         print(f'DATASET ID: {dataset}')
+        performances_list = {}
         for model in models:
             metrics_list = []
             params_dict = []
             for seed in seeds:
                 try:
-                    probs_preds = pd.read_csv(f'./Results/Exp_1/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
-                    best_hopt = pd.read_csv(f'./Results/Exp_1/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
+                    probs_preds = pd.read_csv(f'./Results/Exp_4/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
+                    best_hopt = pd.read_csv(f'./Results/Exp_4/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
 
                     target = probs_preds['Target']
                     pred = probs_preds['Pred']
@@ -46,25 +47,42 @@ if __name__ == '__main__':
             try:
                 print(f'{model} - Dataset_{dataset}: {np.mean(metrics_list):.2f} +/- {np.std(metrics_list):.2f} | Execution Time: {np.mean(params_dict):.2f}')
                 final_analysis_df[f'{model}'] = metrics_list
+                performances_list[f'{model}'] = np.mean(metrics_list)
             except:
                 print(f'{model} - Dataset_{dataset}: ERROR')
 
-        # Calculate the t-value and p-value
-        try:
-            t_stat, p_val = ttest_rel(final_analysis_df['TabPFN_Classifier'], final_analysis_df['HCNN_Classifier'])
+        analysis_matrix = np.zeros((len(models), len(models)))
+        for m in models:
+            for n in models:
+                if m != n:
+                    try:
+                        t_stat, p_val = ttest_rel(final_analysis_df[m], final_analysis_df[n])
+                        if p_val < 0.03 and performances_list[m] > performances_list[n]:
+                            analysis_matrix[models.index(m)][models.index(n)] = '1' # UPPER
+                        elif p_val < 0.03 and performances_list[m] < performances_list[n]:
+                            analysis_matrix[models.index(m)][models.index(n)] = '2' # LOWER
+                        elif p_val > 0.03:
+                            analysis_matrix[models.index(m)][models.index(n)] = '3' # EQUAL
+                    except:
+                        pass
+        analysis_matrix = pd.DataFrame(analysis_matrix)
+        analysis_matrix.columns = models
+        analysis_matrix.index = models
+        print(analysis_matrix)
 
-            if p_val < 0.03:
-                print("The two classifiers are statistically different.")
+        # Calculate the t-value and p-value: t-test
+        '''try:
+            t_stat, p_val = ttest_rel(final_analysis_df['RandomForestClassifier'], final_analysis_df['HCNN_Classifier'])
+
+            if p_val < 0.001:
+                print("t-test: The two classifiers are statistically different.")
                 statistically_different += 1
                 statistically_different_list.append(dataset)
             else:
-                print("The two classifiers are not statistically different.")
+                print("t-test: The two classifiers are not statistically different.")
                 not_statistically_different += 1
                 not_statistically_different_list.append(dataset)
         except:
-            pass
+            pass'''
 
         print('----------------------------------------')
-
-    print(f'Statistically different: {statistically_different} | List: {statistically_different_list}')
-    print(f'Not statistically different: {not_statistically_different} | List: {not_statistically_different_list}')

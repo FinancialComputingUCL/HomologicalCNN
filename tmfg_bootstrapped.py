@@ -20,7 +20,7 @@ class TMFG_Bootstrapped:
 
         correlation_matrix = self.get_correlation_matrix(self.df)
 
-        self.cliques, self.separators, self.adjacency_matrix = TMFG(np.abs(correlation_matrix)).compute_TMFG() # Absolute correlations to compute the TMFG.
+        self.cliques, self.separators, self.adjacency_matrix = TMFG(np.square(correlation_matrix)).compute_TMFG()
         self.nx_tmfg = nx.from_numpy_matrix(self.adjacency_matrix)
         self.original_tmfg = copy.copy(self.nx_tmfg)
         self.number_of_repetitions = number_of_repetitions
@@ -84,7 +84,7 @@ class TMFG_Bootstrapped:
 
         corr_matrix_bootstrapped = self.get_correlation_matrix(bootstrapped)
 
-        cliques, separators, adjacency_matrix = TMFG(corr_matrix_bootstrapped).compute_TMFG()
+        cliques, separators, adjacency_matrix = TMFG(np.square(corr_matrix_bootstrapped)).compute_TMFG()
         TMFG_bootstrapped = nx.from_numpy_matrix(adjacency_matrix)
 
         for e in enumerate(g.edges()):

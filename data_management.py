@@ -77,6 +77,12 @@ class DataManager:
             self.X, self.y = shuffle(self.X, self.y)
             self.X.reset_index(drop=True, inplace=True)
 
+        self.X = self.X.to_numpy()
+
+        mask = ~np.any(np.isnan(self.X), axis=1)
+        self.X = self.X[mask]
+        self.y = self.y[mask]
+
     def __customize_data(self):
         upper_bound_train_test = int(len(self.X) * params.TEST_PERCENTAGE)
         upper_bound_train_val = int((len(self.X) - upper_bound_train_test) * params.VALIDATION_PERCENTAGE)

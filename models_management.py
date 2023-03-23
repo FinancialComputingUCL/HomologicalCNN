@@ -52,6 +52,7 @@ class ModelsManager:
 
         self.tmfg_similarities_options = ['pearson', 'spearman']
         self.tmfg_pvalues_options = [5, 25, 50, 75, 95, 99]
+        self.filtering_options = ['TMFG_Bootstrapping', 'TMFG_StatMatrix']
 
     # === Random Forest Optimization === #
 
@@ -581,6 +582,7 @@ class ModelsManager:
         tmfg_iterations = int(optimization_parameters['tmfg_iterations'])
         tmfg_confidence = optimization_parameters['tmfg_confidence']
         tmfg_similarity = optimization_parameters['tmfg_similarity']
+        filtering_type = optimization_parameters['filtering_type']
 
         local_X_train = self.X_train.copy()
         local_X_val = self.X_val.copy()
@@ -602,6 +604,7 @@ class ModelsManager:
                          tmfg_confidence=tmfg_confidence,
                          tmfg_similarity=tmfg_similarity,
                          root_folder=self.root_folder+'hyperopt/',
+                         filtering_type=filtering_type,
                          )
 
             model.data_preparation_pipeline()
@@ -620,6 +623,7 @@ class ModelsManager:
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
                                    'tmfg_confidence': hp.choice('tmfg_confidence', self.tmfg_pvalues_options),
                                    'tmfg_similarity': hp.choice('tmfg_similarity', self.tmfg_similarities_options),
+                                   'filtering_type': hp.choice('filtering_type', self.filtering_options),
                                    }
         best = fmin(fn=self.hcnn_net_objective, space=optimization_parameters, algo=tpe.suggest,
                     trials=trial, max_evals=params.HOPT_MAX_ITERATIONS, rstate=np.random.default_rng(self.seed))
@@ -627,8 +631,8 @@ class ModelsManager:
 
     def hcnn_out_of_sample_test(self, best_hopt):
 
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         self.post_opt_X_train = np.array(self.post_opt_X_train)
@@ -653,6 +657,7 @@ class ModelsManager:
                      tmfg_confidence=best_hopt['tmfg_confidence'],
                      tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
                      root_folder=self.root_folder+'out_of_sample/',
+                     filtering_type=best_hopt['filtering_type'],
                      )
 
         model.data_preparation_pipeline()
@@ -676,6 +681,7 @@ class ModelsManager:
         best_hopt['number_of_selected_features'] = number_of_selected_features
         best_hopt['tmfg_confidence'] = self.tmfg_pvalues_options[best_hopt['tmfg_confidence']]
         best_hopt['tmfg_similarity'] = self.tmfg_similarities_options[best_hopt['tmfg_similarity']]
+        best_hopt['filtering_type'] = self.filtering_options[best_hopt['filtering_type']]
 
         write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')

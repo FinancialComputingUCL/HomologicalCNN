@@ -9,7 +9,7 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N HCNN
-#$ -t 1-1
+#$ -t 1-570
 
 hostname
 date
