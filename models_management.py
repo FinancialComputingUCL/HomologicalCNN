@@ -335,7 +335,7 @@ class ModelsManager:
         return preds, probs
 
     def cat_boost_manager(self):
-        self.root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        self.root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed-1}/'
         generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
