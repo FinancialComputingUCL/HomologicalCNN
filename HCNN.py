@@ -7,7 +7,7 @@ from homological_models import *
 class HCNN:
     def __init__(self, X_train, X_val, X_test, y_train, y_val, y_test,
                  n_filters_l1, n_filters_l2, tmfg_repetitions, tmfg_confidence,
-                 tmfg_similarity, max_epochs=params.MAX_EPOCHS, T=1, root_folder=None, filtering_type=None):
+                 tmfg_similarity, dropout_rate, max_epochs=params.MAX_EPOCHS, T=1, root_folder=None, filtering_type=None):
         self.number_of_selected_features, self.shape_tetrahedra, self.shape_triangles, self.shape_simplex, self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test = h_input_transform(
             X_train=X_train,
             X_val=X_val,
@@ -33,7 +33,8 @@ class HCNN:
                                   last_layer_neurons=self.last_layer_neurons,
                                   NF_4=self.shape_tetrahedra,
                                   NF_3=self.shape_triangles,
-                                  NF_2=self.shape_simplex)
+                                  NF_2=self.shape_simplex,
+                                  dropout_rate=dropout_rate,)
 
         # Set learning rate based on OpenAI's implementation.
         self.model.set_lr(get_openai_lr(self.model))

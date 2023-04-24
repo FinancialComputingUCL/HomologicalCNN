@@ -115,8 +115,8 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         if sorted(c) in b_cliques_2:
             final_b_cliques_2.append(sorted(c))
 
-    '''
     # Uncomment to prevent overlapping geometrical structures.
+    '''
     new_b_cliques_3 = []
 
     if len(final_b_cliques_4) == 0:
@@ -163,7 +163,9 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
             if not flag:
                 new_b_cliques_2.append(t)
 
-    final_b_cliques_2 = new_b_cliques_2'''
+    final_b_cliques_2 = new_b_cliques_2
+    '''
+    # Comment to prevent overlapping geometrical structures.
 
     try:
         if x is None:
@@ -584,4 +586,4 @@ def transform_outputs(outputs):
 
 def get_openai_lr(model):
     num_params = sum(p.numel() for p in model.parameters())
-    return 0.01 #0.003239 - 0.0001395 * math.log(num_params)
+    return 0.01

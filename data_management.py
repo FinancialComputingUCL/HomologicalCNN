@@ -2,6 +2,7 @@ import os
 import time
 import shutil
 
+import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
 import openml.datasets as open_data
@@ -18,7 +19,7 @@ class DataManager:
         self.seed = seed
         np.random.seed(self.seed)
 
-        self.root_folder = None
+        #self.root_folder = None
         self.X = None
         self.y = None
         self.X_train = None
@@ -48,9 +49,20 @@ class DataManager:
         return numerical_features, categorical_features
 
     def __download_open_ml_dataset(self):
-        while True:
-            self.root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/openml/'
-            generate_folder_structure(self.root_folder)
+        #self.root_folder = f'./Homological_FS/HCNN_Classifier/Dataset_{self.dataset_id}/Seed_{self.seed}/openml/'
+        #generate_folder_structure(self.root_folder)
+        #shutil.rmtree(self.root_folder)
+        self.X = pd.read_csv(f'./data/{self.dataset_id}/X.csv')
+        self.y = pd.read_csv(f'./data/{self.dataset_id}/y.csv')
+
+        if params.SHUFFLE_DATA_BEFORE_SPLITTING:
+            self.X, self.y = shuffle(self.X, self.y)
+            self.X.reset_index(drop=True, inplace=True)
+
+        self.X = self.X.to_numpy()
+        self.y = self.y.to_numpy()
+
+        '''while True:
             try:
                 shutil.rmtree(self.root_folder)
                 openml.config.cache_directory = os.path.expanduser(self.root_folder)
@@ -61,9 +73,18 @@ class DataManager:
                 shutil.rmtree(self.root_folder)
                 break
             except:
-                time.sleep(30)
-                print(f'Downloading error for dataset {self.dataset_id}. Trying again in 30 secs...')
-                continue
+                try:
+                    shutil.rmtree(self.root_folder)
+                    openml.config.cache_directory = os.path.expanduser(self.root_folder)
+                    task = openml.tasks.get_task(self.dataset_id)  # download the OpenML task
+                    dataset = task.get_dataset()
+                    print(dataset)
+                    self.X, self.y, categorical_indicator, attribute_names = dataset.get_data(dataset_format="dataframe", target=dataset.default_target_attribute)
+                    break
+                except:
+                    time.sleep(30)
+                    print(f'Downloading error for dataset {self.dataset_id}. Trying again in 30 secs...')
+                    continue
 
         label_encoder = LabelEncoder()
         self.y = label_encoder.fit_transform(np.array(self.y).ravel())
@@ -81,7 +102,8 @@ class DataManager:
 
         mask = ~np.any(np.isnan(self.X), axis=1)
         self.X = self.X[mask]
-        self.y = self.y[mask]
+        self.y = self.y[mask]'''
+
 
     def __customize_data(self):
         upper_bound_train_test = int(len(self.X) * params.TEST_PERCENTAGE)

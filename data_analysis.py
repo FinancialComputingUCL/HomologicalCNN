@@ -3,11 +3,27 @@ import numpy as np
 
 from sklearn.metrics import *
 from scipy.stats import ttest_rel
+from sklearn.preprocessing import LabelBinarizer
 
 import params
 
+def local_roc_auc_score(y_test, y_prob, average="macro"):
+    n_classes = np.unique(y_test)
+
+    if len(n_classes) > 2:
+        lb = LabelBinarizer()
+        lb.fit(y_test)
+        y_test = lb.transform(y_test)
+        roc_auc_ovr = roc_auc_score(y_test, y_prob, multi_class="ovo", average=average)
+    else:
+        fpr, tpr, thresholds = roc_curve(y_test, y_prob[:, 1])
+        roc_auc_ovr = auc(fpr, tpr)
+
+    return roc_auc_ovr
+
+
 if __name__ == '__main__':
-    seeds = [7521, 5163, 6576, 9706, 3679, 5506, 7570, 6741, 8895, 9267, 9435, 280, 7589, 7108, 9263, 625, 2144, 7538, 5054, 3564, 8209, 1298, 4302, 8125, 1280, 4358, 8082, 408, 8286, 8349]
+    seeds = [82, 74, 21, 12, 1, 24, 84, 78, 52, 61, 555, 125, 257, 825, 290, 298, 830, 714, 159, 736, 9669, 6750, 9820, 4641, 3588, 2471, 8585, 9540, 8779, 2181]
     models = ['RandomForestClassifier',
               'XGBoostClassifier',
               'CatBoostClassifier',
@@ -24,6 +40,8 @@ if __name__ == '__main__':
     statistically_different_list = []
     not_statistically_different_list = []
 
+    wilcoxon_test = {}
+
     for dataset in datasets:
         print(f'DATASET ID: {dataset}')
         performances_list = {}
@@ -32,15 +50,19 @@ if __name__ == '__main__':
             params_dict = []
             for seed in seeds:
                 try:
-                    probs_preds = pd.read_csv(f'./Results/Exp_4/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
-                    best_hopt = pd.read_csv(f'./Results/Exp_4/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
+                    probs_preds = pd.read_csv(f'./Results/{model}/Dataset_{dataset}/Seed_{seed}/pobs_preds.csv')
+                    best_hopt = pd.read_csv(f'./Results/{model}/Dataset_{dataset}/Seed_{seed}/best_hopt.csv')
 
                     target = probs_preds['Target']
                     pred = probs_preds['Pred']
                     execution_time = best_hopt['execution_time'].values[0]
+                    probs = probs_preds.iloc[:, :-2]
 
+                    #metrics_list.append(f1_score(target, pred, average='macro'))
                     metrics_list.append(accuracy_score(target, pred))
+                    #metrics_list.append(local_roc_auc_score(np.array(target), np.array(probs), average='macro'))
                     params_dict.append(execution_time)
+
                 except:
                     print(f'{model} - Dataset_{dataset} - Seed_{seed}: ERROR')
 
@@ -57,11 +79,11 @@ if __name__ == '__main__':
                 if m != n:
                     try:
                         t_stat, p_val = ttest_rel(final_analysis_df[m], final_analysis_df[n])
-                        if p_val < 0.03 and performances_list[m] > performances_list[n]:
+                        if p_val < 0.001 and performances_list[m] > performances_list[n]:
                             analysis_matrix[models.index(m)][models.index(n)] = '1' # UPPER
-                        elif p_val < 0.03 and performances_list[m] < performances_list[n]:
+                        elif p_val < 0.001 and performances_list[m] < performances_list[n]:
                             analysis_matrix[models.index(m)][models.index(n)] = '2' # LOWER
-                        elif p_val > 0.03:
+                        elif p_val > 0.001:
                             analysis_matrix[models.index(m)][models.index(n)] = '3' # EQUAL
                     except:
                         pass
@@ -70,19 +92,15 @@ if __name__ == '__main__':
         analysis_matrix.index = models
         print(analysis_matrix)
 
-        # Calculate the t-value and p-value: t-test
-        '''try:
-            t_stat, p_val = ttest_rel(final_analysis_df['RandomForestClassifier'], final_analysis_df['HCNN_Classifier'])
-
-            if p_val < 0.001:
-                print("t-test: The two classifiers are statistically different.")
-                statistically_different += 1
-                statistically_different_list.append(dataset)
-            else:
-                print("t-test: The two classifiers are not statistically different.")
-                not_statistically_different += 1
-                not_statistically_different_list.append(dataset)
-        except:
-            pass'''
+        wilcoxon_test[f'Dateset_{dataset}'] = performances_list
 
         print('----------------------------------------')
+
+    df = pd.DataFrame(wilcoxon_test)
+    df = df.reset_index().melt(id_vars='index', var_name='Dataset', value_name='Score')
+    df = df.rename(columns={'index': 'Classifier'})
+    df.columns = ['classifier_name', 'dataset_name', 'accuracy']
+
+    from wilcoxon_test import *
+
+    draw_cd_diagram(df_perf=df, title='Accuracy', labels=True)

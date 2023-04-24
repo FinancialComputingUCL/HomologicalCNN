@@ -7,7 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, f1_score
 from tabpfn import TabPFNClassifier
 from xgboost import XGBClassifier
-import shutil
 
 from HCNN import *
 from data_management import *
@@ -26,9 +25,9 @@ class ModelsManager:
         self.X_train = X_train
         self.X_val = X_val
         self.X_test = X_test
-        self.y_train = y_train
-        self.y_val = y_val
-        self.y_test = y_test
+        self.y_train = y_train.ravel()
+        self.y_val = y_val.ravel()
+        self.y_test = y_test.ravel()
 
         self.root_folder = None
 
@@ -53,6 +52,7 @@ class ModelsManager:
         self.tmfg_similarities_options = ['pearson', 'spearman']
         self.tmfg_pvalues_options = [5, 25, 50, 75, 95, 99]
         self.filtering_options = ['TMFG_Bootstrapping', 'TMFG_StatMatrix']
+        self.dropout_options = [0.25]
 
     # === Random Forest Optimization === #
 
@@ -90,8 +90,8 @@ class ModelsManager:
         return best
 
     def random_forest_out_of_sample_test(self, best_hopt):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         model = RandomForestClassifier(n_estimators=int(best_hopt['n_estimators']),
@@ -183,8 +183,8 @@ class ModelsManager:
         return best
 
     def xgboost_out_of_sample_test(self, best_hopt):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         if params.DEVICE == 'cuda':
@@ -297,8 +297,8 @@ class ModelsManager:
         return best
 
     def cat_boost_out_of_sample_test(self, best_hopt):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         if params.DEVICE == 'cuda':
@@ -397,8 +397,8 @@ class ModelsManager:
         return best
 
     def lightgbm_out_of_sample_test(self, best_hopt, choices_dict):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         model = LGBMClassifier(n_estimators=int(best_hopt['n_estimators']),
@@ -462,8 +462,8 @@ class ModelsManager:
         return best
 
     def tab_pfn_out_of_sample_test(self, best_hopt):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         device = torch.device(params.DEVICE if torch.cuda.is_available() else "cpu")
@@ -532,8 +532,8 @@ class ModelsManager:
         return best
 
     def tab_net_out_of_sample_test(self, best_hopt):
-        self.post_opt_X_train = pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         model = TabNetClassifier(optimizer_params=dict(lr=best_hopt['learning_rate']),
@@ -583,6 +583,7 @@ class ModelsManager:
         tmfg_confidence = optimization_parameters['tmfg_confidence']
         tmfg_similarity = optimization_parameters['tmfg_similarity']
         filtering_type = optimization_parameters['filtering_type']
+        dropout_rate = optimization_parameters['dropout_rate']
 
         local_X_train = self.X_train.copy()
         local_X_val = self.X_val.copy()
@@ -605,6 +606,7 @@ class ModelsManager:
                          tmfg_similarity=tmfg_similarity,
                          root_folder=self.root_folder+'hyperopt/',
                          filtering_type=filtering_type,
+                         dropout_rate=dropout_rate,
                          )
 
             model.data_preparation_pipeline()
@@ -618,21 +620,21 @@ class ModelsManager:
 
     @measure_execution_time
     def hcnn_net_optimize(self, trial):
-        optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4),
-                                   'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 8),
+        optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4), # 4, 16, 4
+                                   'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 4), # 32, 64, 8
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
                                    'tmfg_confidence': hp.choice('tmfg_confidence', self.tmfg_pvalues_options),
                                    'tmfg_similarity': hp.choice('tmfg_similarity', self.tmfg_similarities_options),
                                    'filtering_type': hp.choice('filtering_type', self.filtering_options),
+                                   'dropout_rate': hp.choice('dropout_rate', self.dropout_options),
                                    }
         best = fmin(fn=self.hcnn_net_objective, space=optimization_parameters, algo=tpe.suggest,
                     trials=trial, max_evals=params.HOPT_MAX_ITERATIONS, rstate=np.random.default_rng(self.seed))
         return best
 
     def hcnn_out_of_sample_test(self, best_hopt):
-
-        self.post_opt_X_train = self.X_train #pd.concat([self.X_train, self.X_val])
-        self.post_opt_y_train = self.y_train #pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train = self.X_train
+        self.post_opt_y_train = self.y_train
         self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
 
         self.post_opt_X_train = np.array(self.post_opt_X_train)
@@ -658,6 +660,7 @@ class ModelsManager:
                      tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
                      root_folder=self.root_folder+'out_of_sample/',
                      filtering_type=best_hopt['filtering_type'],
+                     dropout_rate=self.dropout_options[best_hopt['dropout_rate']],
                      )
 
         model.data_preparation_pipeline()
@@ -682,6 +685,7 @@ class ModelsManager:
         best_hopt['tmfg_confidence'] = self.tmfg_pvalues_options[best_hopt['tmfg_confidence']]
         best_hopt['tmfg_similarity'] = self.tmfg_similarities_options[best_hopt['tmfg_similarity']]
         best_hopt['filtering_type'] = self.filtering_options[best_hopt['filtering_type']]
+        best_hopt['dropout_rate'] = self.dropout_options[best_hopt['dropout_rate']]
 
         write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')

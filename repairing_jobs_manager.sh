@@ -1,6 +1,6 @@
 #$ -l tmem=2G
 #$ -l h_vmem=2G
-#$ -l h_rt=200:00:00
+#$ -l h_rt=12:00:00
 #$ -R y
 #$ -pe smp 8
 
@@ -9,13 +9,13 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N HCNN
-#$ -t 1-2100
+#$ -t 1-3
 
 hostname
 date
 
 number=$SGE_TASK_ID
-paramfile="/SAN/fca/DRL_HFT_Investigations/HCNN/jobs.txt"
+paramfile="/SAN/fca/DRL_HFT_Investigations/HCNN/repairing_jobs.txt"
 
 source /share/apps/source_files/python/python-3.9.5.source
 source /SAN/fca/DRL_HFT_Investigations/HCNN/LOCAL_ENV/HEnv/bin/activate

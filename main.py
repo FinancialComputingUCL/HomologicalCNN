@@ -3,9 +3,9 @@ import argparse
 from models_management import *
 
 parser = argparse.ArgumentParser(description='HCNN Experiments.')
-parser.add_argument('--model', type=str, default='HCNN', help="Model to be run.")
-parser.add_argument('--dataset_id', type=int, default=458, help="Dataset to be considered.")
-parser.add_argument('--seed', type=int, default=52, help="Seed to be used.")
+parser.add_argument('--model', type=str, default='RandomForest', help="Model to be run.")
+parser.add_argument('--dataset_id', type=int, default=11, help="Dataset to be considered.")
+parser.add_argument('--seed', type=int, default=5163, help="Seed to be used.")
 args = parser.parse_args()
 
 if __name__ == '__main__':

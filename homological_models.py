@@ -344,7 +344,7 @@ class HCNN_model2D(nn.Module):
 
 
 class HCNN_model1D(LightningModule):
-    def __init__(self, T, FILTERS_L1, FILTERS_L2, last_layer_neurons, NF_4=None, NF_3=None, NF_2=None, lr=0.001):
+    def __init__(self, T, FILTERS_L1, FILTERS_L2, last_layer_neurons, dropout_rate, NF_4=None, NF_3=None, NF_2=None, lr=0.01):
         super().__init__()
         self.NF_4 = NF_4
         self.NF_3 = NF_3
@@ -357,6 +357,8 @@ class HCNN_model1D(LightningModule):
         self.test_preds = None
         self.test_probs = None
         self.lr = lr
+        self.dropout_rate = dropout_rate
+        print(self.dropout_rate)
 
         if (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is not None):
             self.logic_conv_tetrahedra = nn.Sequential(
@@ -364,13 +366,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_conv_triangles = nn.Sequential(
@@ -378,13 +380,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -392,21 +394,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 3), out_features=((FILTERS_L2 * 3)+32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 3)+32), out_features=((FILTERS_L2 * 3)+64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 3)+64), out_features=last_layer_neurons),
+                nn.Linear(in_features=(FILTERS_L2 * 3), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is not None) and (self.NF_2 is not None):
@@ -416,13 +414,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -430,21 +428,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2)+32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2)+32), out_features=((FILTERS_L2 * 2)+64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2)+64), out_features=last_layer_neurons),
+                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is None) and (self.NF_2 is not None):
@@ -454,21 +448,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2+32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2+32), out_features=(FILTERS_L2+64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2+64), out_features=last_layer_neurons),
+                nn.Linear(in_features=FILTERS_L2, out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is None):
@@ -477,21 +467,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons),
+                nn.Linear(in_features=FILTERS_L2, out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is None) and (self.NF_2 is not None):
@@ -500,13 +486,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -514,21 +500,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons),
+                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is not None) and (self.NF_2 is None):
@@ -537,21 +519,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=FILTERS_L2, out_features=(FILTERS_L2 + 32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2 + 32), out_features=(FILTERS_L2 + 64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=(FILTERS_L2 + 64), out_features=last_layer_neurons),
+                nn.Linear(in_features=FILTERS_L2, out_features=last_layer_neurons),
             )
 
         elif (self.NF_4 is not None) and (self.NF_3 is not None) and (self.NF_2 is None):
@@ -560,13 +538,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_conv_triangles = nn.Sequential(
@@ -574,21 +552,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.BatchNorm1d(FILTERS_L1),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.BatchNorm1d(FILTERS_L2),
-                nn.LeakyReLU(negative_slope=0.01),
+                nn.Dropout(p=self.dropout_rate),
+                nn.ReLU6(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=((FILTERS_L2 * 2) + 32)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 32), out_features=((FILTERS_L2 * 2) + 64)),
-                nn.ReLU6(),
-                nn.Linear(in_features=((FILTERS_L2 * 2) + 64), out_features=last_layer_neurons),
+                nn.Linear(in_features=(FILTERS_L2 * 2), out_features=last_layer_neurons),
             )
 
     def forward(self, tetrahedra=None, triangles=None, simplex=None):
@@ -740,10 +714,9 @@ class HCNN_model1D(LightningModule):
         self.val_probs = probs
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, eta_min=self.lr/100, last_epoch=-1)
+        optimizer = torch.optim.AdamW(self.parameters(), self.lr, weight_decay=1e-2)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=15, eta_min=self.lr/100)
         return [optimizer], [scheduler]
 
     def set_lr(self, lr):
         self.lr = lr
-
