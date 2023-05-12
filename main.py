@@ -3,7 +3,7 @@ import argparse
 from models_management import *
 
 parser = argparse.ArgumentParser(description='HCNN Experiments.')
-parser.add_argument('--model', type=str, default='CatBoost', help="Model to be run.")
+parser.add_argument('--model', type=str, default='AutoGluon', help="Model to be run.")
 parser.add_argument('--dataset_id', type=int, default=458, help="Dataset to be considered.")
 parser.add_argument('--seed', type=int, default=6751, help="Seed to be used.")
 args = parser.parse_args()
@@ -56,6 +56,13 @@ if __name__ == '__main__':
                            y_train=y_train, y_val=y_val, y_test=y_test)
         mm.hcnn_manager()
 
+    elif args.model == 'AutoGluon':
+        mm = ModelsManager(model='AutoGluon', seed=seed, dataset_id=args.dataset_id,
+                           X_train=X_train, X_val=X_val, X_test=X_test,
+                           y_train=y_train, y_val=y_val, y_test=y_test)
+        mm.auto_gluon_manager()
+
+    '''
     elif args.model == 'HRandomForest':
         mm = ModelsManager(model='HRandomForest', seed=seed, dataset_id=args.dataset_id,
                            X_train=X_train, X_val=X_val, X_test=X_test,
@@ -91,3 +98,4 @@ if __name__ == '__main__':
                            X_train=X_train, X_val=X_val, X_test=X_test,
                            y_train=y_train, y_val=y_val, y_test=y_test)
         mm.h_tab_net_manager()
+    '''

@@ -1,6 +1,6 @@
 #$ -l tmem=2G
 #$ -l h_vmem=2G
-#$ -l h_rt=200:00:00
+#$ -l h_rt=24:00:00
 #$ -R y
 #$ -pe smp 8
 
@@ -9,7 +9,7 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N HCNN
-#$ -t 1-2100
+#$ -t 1-570
 
 hostname
 date

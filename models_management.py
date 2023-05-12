@@ -1,3 +1,4 @@
+import pandas as pd
 from catboost import CatBoostClassifier
 from hyperopt import tpe, hp, Trials
 from hyperopt.fmin import fmin
@@ -7,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, f1_score
 from tabpfn import TabPFNClassifier
 from xgboost import XGBClassifier
+from autogluon.tabular import TabularPredictor
+from autogluon.core.metrics import make_scorer
 
 from HCNN import *
 from data_management import *
@@ -18,6 +21,10 @@ class ModelsManager:
         self.model = model
         self.seed = seed
         self.dataset_id = dataset_id
+
+        self.dataset_time_mapping = {'11': 3206, '1462': 6995, '1464': 1843, '18': 7628, '37': 1631, '15': 1686,
+                                     '54': 4031, '40994': 1875, '1063': 2302, '1068': 3691, '40982': 6231, '1510': 2761,
+                                     '1049': 6442, '1050': 4832, '1494': 3717, '22': 5883, '16': 7347, '458': 6281, '14': 6401}
 
         ### === Fix seed === ###
         np.random.seed(self.seed)
@@ -35,15 +42,10 @@ class ModelsManager:
                                  'XGBoost',
                                  'CatBoost',
                                  'LightGBM',
+                                 'AutoGluon',
                                  'TabularTransformer',
                                  'TabNet',
-                                 'HCNN',
-                                 'HRandomForest',
-                                 'HXGBoost',
-                                 'HCatBoost',
-                                 'HLightGBM',
-                                 'HTabularTransformer',
-                                 'HTabNet']
+                                 'HCNN']
         assert self.model in self.available_models, 'Model not recognised'
 
         self.post_opt_X_train = None
@@ -52,7 +54,7 @@ class ModelsManager:
         self.tmfg_similarities_options = ['pearson', 'spearman']
         self.tmfg_pvalues_options = [5, 25, 50, 75, 95, 99]
         self.filtering_options = ['TMFG_Bootstrapping', 'TMFG_StatMatrix']
-        self.dropout_options = [0.25]
+        self.dropout_options = [0.05]
 
     # === Random Forest Optimization === #
 
@@ -335,7 +337,7 @@ class ModelsManager:
         return preds, probs
 
     def cat_boost_manager(self):
-        self.root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed-1}/'
+        self.root_folder = f'./Homological_FS/CatBoostClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
         generate_folder_structure(self.root_folder)
 
         trial_hopt = Trials()
@@ -573,6 +575,65 @@ class ModelsManager:
         preds, probs = self.tab_net_out_of_sample_test(best_hopt=best_hopt)
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
+    # == AutoGluon Optimization === #
+    def auto_gluon_out_of_sample_test(self):
+        self.post_opt_X_train = self.X_train
+        self.post_opt_y_train = self.y_train
+        self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
+
+        _, scaled_X_val = scaling(X_train=self.post_opt_X_train,
+                                  X_additional=self.X_val,
+                                  choice=params.SCALING_SCHEME)
+
+        scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
+                                                X_additional=self.X_test,
+                                                choice=params.SCALING_SCHEME)
+
+        train_df = pd.concat([pd.DataFrame(scaled_X_train), pd.Series(self.post_opt_y_train)], axis=1)
+        val_df = pd.concat([pd.DataFrame(scaled_X_val), pd.Series(self.y_val)], axis=1)
+        test_df = pd.DataFrame(scaled_X_test)
+        test_df_labelled = pd.concat([pd.DataFrame(scaled_X_test), pd.Series(self.y_test)], axis=1)
+
+        labels_names = []
+        for i in range(0, scaled_X_train.shape[1]):
+            labels_names.append(str(i))
+        labels_names.append('label')
+
+        train_df.columns = labels_names
+        val_df.columns = labels_names
+        test_df.columns = labels_names[:-1]
+        test_df_labelled.columns = labels_names
+
+        label = 'label'
+        hyperparameter_tune_kwargs = {
+            'scheduler': 'local',
+            'searcher': 'auto',
+        }
+        model = TabularPredictor(label=label,
+                                 eval_metric='f1_macro',
+                                 path=f'{self.root_folder}models_specifics/', verbosity=0).fit(train_df,
+                                                                                               tuning_data=val_df,
+                                                                                               time_limit=self.dataset_time_mapping[str(self.dataset_id)],
+                                                                                               num_cpus=8,
+                                                                                               hyperparameter_tune_kwargs=hyperparameter_tune_kwargs)
+        preds = model.predict(test_df)
+        probs = model.predict_proba(test_df)
+        score = classification_report(self.y_test, preds)
+        print(score)
+
+        model.delete_models(models_to_keep='best', dry_run=False, allow_delete_cascade=True)
+        root_dir = f'{self.root_folder}models_specifics/'
+        delete_empty_subdirectories(root_dir)
+
+        return np.array(preds), np.array(probs)
+
+    def auto_gluon_manager(self):
+        self.root_folder = f'./Homological_FS/AutoGluonClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
+
+        preds, probs = self.auto_gluon_out_of_sample_test()
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
+
     # === Homological Convolutional Neural Network Optimization === #
 
     def hcnn_net_objective(self, optimization_parameters):
@@ -694,6 +755,7 @@ class ModelsManager:
         shutil.rmtree(path=(self.root_folder + 'hyperopt/'))
         shutil.rmtree(path=(self.root_folder + 'out_of_sample/'))
 
+    '''
     # === Homological Random Forest Optimization === #
 
     def h_random_forest_objective(self, optimization_parameters):
@@ -1305,3 +1367,4 @@ class ModelsManager:
         best_hopt['number_selected_features'] = [number_selected_features]
         write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
+    '''

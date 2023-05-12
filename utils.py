@@ -1,6 +1,6 @@
 import numpy as np
 import time
-
+import os
 
 def max_clique(W):
     flat_matrix = np.array(W).flatten()
@@ -41,3 +41,14 @@ def toc():
         print("Elapsed time is " + str(time.time() - startTime_for_tictoc) + " seconds.")
     else:
         print("Toc: start time not set")
+
+
+def delete_empty_subdirectories(root_dir):
+    for dirpath, dirnames, filenames in os.walk(root_dir, topdown=False):
+        for dirname in dirnames:
+            dir_full_path = os.path.join(dirpath, dirname)
+            try:
+                os.rmdir(dir_full_path)
+                print(f"Deleted empty directory: {dir_full_path}")
+            except OSError:
+                pass

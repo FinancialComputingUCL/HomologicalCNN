@@ -275,7 +275,7 @@ def form_cliques(p_values, nnames):
     return networkx.find_cliques(g)
 
 
-def draw_cd_diagram(df_perf=None, alpha=0.05, title=None, labels=False):
+def draw_cd_diagram(df_perf=None, alpha=0.01, title=None, labels=False):
     """
     Draws the critical difference diagram given the list of pairwise classifiers that are
     significant or not
@@ -289,7 +289,7 @@ def draw_cd_diagram(df_perf=None, alpha=0.05, title=None, labels=False):
 
 
     graph_ranks(average_ranks.values, average_ranks.keys(), p_values,
-                cd=None, reverse=True, width=9, textspace=1.5, labels=labels)
+                cd=None, reverse=True, width=12, textspace=2.5)#, labels=labels)
 
     font = {'family': 'sans-serif',
         'color':  'black',
