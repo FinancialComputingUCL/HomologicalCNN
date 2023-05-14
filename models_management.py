@@ -615,24 +615,40 @@ class ModelsManager:
                                                                                                tuning_data=val_df,
                                                                                                time_limit=self.dataset_time_mapping[str(self.dataset_id)],
                                                                                                num_cpus=8,
-                                                                                               hyperparameter_tune_kwargs=hyperparameter_tune_kwargs)
-        preds = model.predict(test_df)
-        probs = model.predict_proba(test_df)
-        score = classification_report(self.y_test, preds)
-        print(score)
+                                                                                               hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,)
+
+        # Get the performances of all the models.
+        all_models = model.get_model_names()
+        models_performance_list = {}
+        for m in all_models:
+            specific_model = model._trainer.load_model(m)
+            local_preds = specific_model.predict(test_df)
+            local_probs = specific_model.predict_proba(test_df)
+            score = f1_score(self.y_test, local_preds, average='macro')
+            models_performance_list[m] = (np.array(local_preds), np.array(local_probs), score)
+
+        # Remove duplicate models based on their name.
+        grouped_dict = {key.split('/')[0]: [] for key in models_performance_list}
+        for key in models_performance_list:
+            grouped_dict[key.split('/')[0]].append(key)
+
+        filtered_dict = {max(grouped_dict[key], key=lambda x: models_performance_list[x][2]): models_performance_list[max(grouped_dict[key], key=lambda x: models_performance_list[x][2])] for key in grouped_dict}
+        filtered_dict = {key.split('/')[0]: value for key, value in filtered_dict.items()}
 
         model.delete_models(models_to_keep='best', dry_run=False, allow_delete_cascade=True)
         root_dir = f'{self.root_folder}models_specifics/'
         delete_empty_subdirectories(root_dir)
 
-        return np.array(preds), np.array(probs)
+        return filtered_dict
 
     def auto_gluon_manager(self):
         self.root_folder = f'./Homological_FS/AutoGluonClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
         generate_folder_structure(self.root_folder)
 
-        preds, probs = self.auto_gluon_out_of_sample_test()
-        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
+        dict_preds_probs = self.auto_gluon_out_of_sample_test()
+        for key in dict_preds_probs:
+            preds, probs, score = dict_preds_probs[key]
+            merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + f'{key}_pobs_preds.csv')
 
     # === Homological Convolutional Neural Network Optimization === #
 
