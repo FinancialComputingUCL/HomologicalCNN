@@ -1,4 +1,6 @@
 import argparse
+import utils
+import multiprocessing
 
 from models_management import *
 
@@ -8,7 +10,16 @@ parser.add_argument('--dataset_id', type=int, default=458, help="Dataset to be c
 parser.add_argument('--seed', type=int, default=6751, help="Seed to be used.")
 args = parser.parse_args()
 
-if __name__ == '__main__':
+
+def process_item(tuple):
+
+    args.model = tuple[1]
+    args.dataset_id = int(tuple[2])
+    args.seed = int(tuple[3])
+
+    print(args.model)
+    print(args.dataset_id)
+    print(args.seed)
 
     seed = args.seed
     dm = DataManager(dataset_id=args.dataset_id, seed=seed)
@@ -99,3 +110,22 @@ if __name__ == '__main__':
                            y_train=y_train, y_val=y_val, y_test=y_test)
         mm.h_tab_net_manager()
     '''
+
+
+if __name__ == '__main__':
+
+    ###
+    file_path = './jobs.txt'
+    result = read_file(file_path)
+
+    # Create a multiprocessing Pool with the number of processes you want
+    pool = multiprocessing.Pool(processes=8)  # Replace 4 with the desired number of processes
+
+    # Apply the process_item function to each item in parallel
+    results = pool.map(process_item, result)
+
+    # Close the pool to free up resources
+    pool.close()
+
+    #for r in result:
+    #    process_item(r)

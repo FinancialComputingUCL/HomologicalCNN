@@ -52,3 +52,16 @@ def delete_empty_subdirectories(root_dir):
                 print(f"Deleted empty directory: {dir_full_path}")
             except OSError:
                 pass
+
+
+def read_file(file_path):
+    tuples = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            args = line.strip().split()
+            if len(args) == 4:
+                # Create a tuple and append it to the list
+                tuples.append(tuple(args))
+            else:
+                print(f"Invalid line format: {line}")
+    return tuples

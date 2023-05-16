@@ -1,12 +1,10 @@
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-
-from sklearn.metrics import *
+import pandas as pd
 from scipy.stats import ttest_rel
+from sklearn.metrics import *
 from sklearn.preprocessing import LabelBinarizer
 
-import params
 
 def local_roc_auc_score(y_test, y_prob, average="macro"):
     n_classes = np.unique(y_test)
@@ -34,7 +32,7 @@ if __name__ == '__main__':
               'HCNN_Classifier',
               ]
     datasets = [11, 1462, 1464, 18, 37, 15, 54, 40994, 1063, 1068, 40982, 1510, 1049, 1050, 1494, 22, 16, 458, 14]#[11, 14, 15, 16, 18, 22, 37, 54, 458, 1049, 1050, 1063, 1068, 1462, 1464, 1494, 1510, 40982, 40994]
-    regularization_factor = 0.35
+    regularization_factor = 0.05
 
     final_analysis_df = {}
     statistically_different = 0

@@ -1,4 +1,4 @@
-import pandas as pd
+from autogluon.tabular import TabularPredictor
 from catboost import CatBoostClassifier
 from hyperopt import tpe, hp, Trials
 from hyperopt.fmin import fmin
@@ -8,8 +8,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, f1_score
 from tabpfn import TabPFNClassifier
 from xgboost import XGBClassifier
-from autogluon.tabular import TabularPredictor
-from autogluon.core.metrics import make_scorer
 
 from HCNN import *
 from data_management import *
@@ -605,17 +603,19 @@ class ModelsManager:
         test_df_labelled.columns = labels_names
 
         label = 'label'
-        hyperparameter_tune_kwargs = {
-            'scheduler': 'local',
-            'searcher': 'auto',
-        }
+        #hyperparameter_tune_kwargs = {
+        #    'scheduler': 'local',
+        #    'searcher': 'auto',
+        #}
         model = TabularPredictor(label=label,
                                  eval_metric='f1_macro',
                                  path=f'{self.root_folder}models_specifics/', verbosity=0).fit(train_df,
                                                                                                tuning_data=val_df,
                                                                                                time_limit=self.dataset_time_mapping[str(self.dataset_id)],
-                                                                                               num_cpus=8,
-                                                                                               hyperparameter_tune_kwargs=hyperparameter_tune_kwargs,)
+                                                                                               num_cpus=4,
+                                                                                               #hyperparameter_tune_kwargs=hyperparameter_tune_kwargs
+                                                                                               hyperparameters=None,
+                                                                                               )
 
         # Get the performances of all the models.
         all_models = model.get_model_names()

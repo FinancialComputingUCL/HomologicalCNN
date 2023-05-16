@@ -18,7 +18,7 @@ number=$SGE_TASK_ID
 paramfile="/SAN/fca/DRL_HFT_Investigations/HCNN/jobs.txt"
 
 source /share/apps/source_files/python/python-3.9.5.source
-source /SAN/fca/DRL_HFT_Investigations/HCNN/LOCAL_ENV/HEnv/bin/activate
+source /SAN/fca/DRL_HFT_Investigations/HCNN/LOCAL_ENV/GluonEnv/bin/activate
 
 index="`sed -n ${number}p $paramfile | awk '{print $1}'`"
 variable1="`sed -n ${number}p $paramfile | awk '{print $2}'`"
