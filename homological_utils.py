@@ -54,16 +54,20 @@ def get_final_X_2(X, final_b_cliques_2):
 def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repetitions, tmfg_confidence,
                       tmfg_similarity, filtering_type):
     if filtering_type == 'TMFG_Bootstrapping':
+        print('TMFG_Bootstrapping')
+        print(tmfg_confidence)
         cliques, separators, original_tmfg, _, adjacency_matrix = TMFG_Bootstrapped(X_train,
                                                                                     tmfg_similarity,
                                                                                     tmfg_repetitions,
                                                                                     tmfg_confidence,
                                                                                     parallel=True).compute_tmfg_bootstrapping()
     else:
-        cliques, separators, adjacency_matrix = Bootstrapped_Network(X_train,
-                                                                     tmfg_similarity,
-                                                                     tmfg_repetitions,
-                                                                     tmfg_confidence, 'similarity_matrix', parallel=True).compute_bootstrapping()
+        print('Stat_Network')
+        print(tmfg_confidence)
+        cliques, separators, adjacency_matrix = Bootstrapped_Similarity_Matrix(X_train,
+                                                                               tmfg_similarity,
+                                                                               tmfg_repetitions,
+                                                                               parallel=True).compute_bootstrapping()
         original_tmfg = adjacency_matrix
 
     c = nx.degree_centrality(adjacency_matrix)
@@ -71,6 +75,9 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
     keys = np.array(list(c.keys()))
     values = np.array(list(c.values()))
     nodes_list = sorted(list(keys[values != 0]))
+
+    print(len(c.keys()))
+    print(len(nodes_list))
 
     simplexes = []
 

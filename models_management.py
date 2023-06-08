@@ -1,10 +1,11 @@
-from autogluon.tabular import TabularPredictor
 from catboost import CatBoostClassifier
 from hyperopt import tpe, hp, Trials
 from hyperopt.fmin import fmin
 from lightgbm import LGBMClassifier
 from pytorch_tabnet.tab_model import TabNetClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report, f1_score
 from tabpfn import TabPFNClassifier
 from xgboost import XGBClassifier
@@ -12,6 +13,8 @@ from xgboost import XGBClassifier
 from HCNN import *
 from data_management import *
 from models_utils import *
+
+import shutil
 
 
 class ModelsManager:
@@ -37,10 +40,11 @@ class ModelsManager:
         self.root_folder = None
 
         self.available_models = ['RandomForest',
+                                 'LogisticRegression',
                                  'XGBoost',
                                  'CatBoost',
                                  'LightGBM',
-                                 'AutoGluon',
+                                 'MLP',
                                  'TabularTransformer',
                                  'TabNet',
                                  'HCNN']
@@ -50,9 +54,75 @@ class ModelsManager:
         self.post_opt_y_train = None
 
         self.tmfg_similarities_options = ['pearson', 'spearman']
-        self.tmfg_pvalues_options = [5, 25, 50, 75, 95, 99]
-        self.filtering_options = ['TMFG_Bootstrapping', 'TMFG_StatMatrix']
-        self.dropout_options = [0.05]
+        self.tmfg_pvalues_options = [90, 95, 99]
+        self.filtering_options = ['TMFG_Bootstrapping']
+        #self.tmfg_pvalues_options = [0] #TODO: uncomment
+        #self.filtering_options = ['TMFG_StatMatrix'] #TODO: uncomment
+        self.dropout_options = [0.25]
+
+    # === Logistic Regression Optimization === #
+
+    def logistic_regression_objective(self, optimization_parameters):
+        penalty = str(optimization_parameters['penalty'])
+        max_iter = int(optimization_parameters['max_iter'])
+
+        model = LogisticRegression(penalty=penalty,
+                                   max_iter=max_iter)
+
+        scaled_X_train, scaled_X_val = scaling(X_train=self.X_train,
+                                               X_additional=self.X_val,
+                                               choice=params.SCALING_SCHEME)
+
+        try:
+            model.fit(scaled_X_train, self.y_train)
+            preds = model.predict(scaled_X_val)
+            score = f1_score(self.y_val, preds, average='macro')
+            return -score
+        except:
+            return 0
+
+    @measure_execution_time
+    def logistic_regression_optimize(self, trial, choices_dict):
+        optimization_parameters = {'penalty': hp.choice('penalty', choices_dict['penalty']),
+                                   'max_iter': hp.choice('max_iter', choices_dict['max_iter'])}
+        best = fmin(fn=self.logistic_regression_objective, space=optimization_parameters, algo=tpe.suggest,
+                    trials=trial, max_evals=params.HOPT_MAX_ITERATIONS, rstate=np.random.default_rng(self.seed))
+        return best
+
+    def logistic_regression_out_of_sample_test(self, best_hopt, choices_dict):
+        self.post_opt_X_train = self.X_train  # pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train  # pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
+
+        model = LogisticRegression(penalty=str(choices_dict['penalty'][best_hopt['penalty']]),
+                                   max_iter=int(choices_dict['max_iter'][best_hopt['max_iter']]))
+
+        scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
+                                                X_additional=self.X_test,
+                                                choice=params.SCALING_SCHEME)
+
+        model.fit(scaled_X_train, self.post_opt_y_train)
+        preds = model.predict(scaled_X_test)
+        probs = model.predict_proba(scaled_X_test)
+        score = classification_report(self.y_test, preds)
+        print(score)
+        return preds, probs
+
+    def logistic_regression_manager(self):
+        penalty = ['l1', 'l2', 'elasticnet']
+        max_iter = ['100', '500', '1000']
+        choices_dict = {'penalty': penalty, 'max_iter': max_iter}
+
+        self.root_folder = f'./Homological_FS/LogisticRegressionClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
+
+        trial_hopt = Trials()
+        best_hopt = self.logistic_regression_optimize(trial_hopt, choices_dict)
+        best_hopt = update_keys(d=best_hopt)
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+
+        preds, probs = self.logistic_regression_out_of_sample_test(best_hopt=best_hopt, choices_dict=choices_dict)
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
     # === Random Forest Optimization === #
 
@@ -405,8 +475,8 @@ class ModelsManager:
                                max_depth=int(best_hopt['max_depth']),
                                learning_rate=best_hopt['learning_rate'],
                                num_leaves=int(best_hopt['num_leaves']),
-                               reg_alpha=best_hopt['reg_alpha'],
-                               reg_lambda=best_hopt['reg_lambda'],
+                               reg_alpha=choices_dict['reg_alpha'][best_hopt['reg_alpha']],
+                               reg_lambda=choices_dict['reg_lambda'][best_hopt['reg_lambda']],
                                subsample=best_hopt['subsample'])
 
         scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
@@ -436,6 +506,84 @@ class ModelsManager:
         preds, probs = self.lightgbm_out_of_sample_test(best_hopt=best_hopt, choices_dict=choices_dict)
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
+    # === MLPClassifier Regression Optimization === #
+
+    def mlp_classifier_objective(self, optimization_parameters):
+        model = MLPClassifier(hidden_layer_sizes=int(optimization_parameters['hidden_layer_sizes']),
+                              alpha=float(optimization_parameters['alpha']),
+                              max_iter=int(optimization_parameters['max_iter']),
+                              learning_rate=str(optimization_parameters['learning_rate']),
+                              random_state=self.seed,
+                              early_stopping=True,
+                              validation_fraction=0.1)
+
+        scaled_X_train, scaled_X_val = scaling(X_train=self.X_train,
+                                               X_additional=self.X_val,
+                                               choice=params.SCALING_SCHEME)
+
+        try:
+            model.fit(scaled_X_train, self.y_train)
+            preds = model.predict(scaled_X_val)
+            score = f1_score(self.y_val, preds, average='macro')
+            return -score
+        except:
+            return 0
+
+    @measure_execution_time
+    def mlp_classifier_optimize(self, trial, choices_dict):
+        optimization_parameters = {'hidden_layer_sizes': hp.choice('hidden_layer_sizes', choices_dict['hidden_layer_sizes']),
+                                   'alpha': hp.choice('alpha', choices_dict['alpha']),
+                                   'max_iter': hp.choice('max_iter', choices_dict['max_iter']),
+                                   'learning_rate': hp.choice('learning_rate', choices_dict['learning_rate'])}
+
+        best = fmin(fn=self.mlp_classifier_objective, space=optimization_parameters, algo=tpe.suggest,
+                    trials=trial, max_evals=params.HOPT_MAX_ITERATIONS, rstate=np.random.default_rng(self.seed))
+        return best
+
+    def mlp_classifier_out_of_sample_test(self, best_hopt, choices_dict):
+        self.post_opt_X_train = self.X_train  # pd.concat([self.X_train, self.X_val])
+        self.post_opt_y_train = self.y_train  # pd.concat([pd.Series(self.y_train), pd.Series(self.y_val)])
+        self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
+
+        model = MLPClassifier(hidden_layer_sizes=int(choices_dict['hidden_layer_sizes'][best_hopt['hidden_layer_sizes']]),
+                              alpha=float(choices_dict['alpha'][best_hopt['alpha']]),
+                              max_iter=int(choices_dict['max_iter'][best_hopt['max_iter']]),
+                              learning_rate=str(choices_dict['learning_rate'][best_hopt['learning_rate']]),
+                              random_state=self.seed,
+                              early_stopping=True,
+                              validation_fraction=0.1)
+
+        scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
+                                                X_additional=self.X_test,
+                                                choice=params.SCALING_SCHEME)
+
+        model.fit(scaled_X_train, self.post_opt_y_train)
+        preds = model.predict(scaled_X_test)
+        probs = model.predict_proba(scaled_X_test)
+        score = classification_report(self.y_test, preds)
+        print(score)
+        return preds, probs
+
+    def mlp_manager(self):
+        hidden_layer_sizes = [10, 50, 100, 150, 200]
+        alpha = [0.1, 0.01, 0.001, 0.0001]
+        max_iter = [100, 500, 1000]
+        learning_rate = ['constant', 'invscaling', 'adaptive']
+
+        choices_dict = {'hidden_layer_sizes': hidden_layer_sizes, 'alpha': alpha, 'max_iter': max_iter, 'learning_rate': learning_rate}
+
+        self.root_folder = f'./Homological_FS/MLPClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
+        generate_folder_structure(self.root_folder)
+
+        trial_hopt = Trials()
+        best_hopt = self.mlp_classifier_optimize(trial_hopt, choices_dict)
+        best_hopt = update_keys(d=best_hopt)
+        write_json_file(best_hopt, self.root_folder + 'best_hopt.csv')
+
+        preds, probs = self.mlp_classifier_out_of_sample_test(best_hopt=best_hopt, choices_dict=choices_dict)
+        merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
+
+
     # === TabPFN Optimization === #
 
     def tab_pfn_objective(self, optimization_parameters):
@@ -445,9 +593,8 @@ class ModelsManager:
 
         model = TabPFNClassifier(device=device, N_ensemble_configurations=nec)
 
-        scaled_X_train, scaled_X_val = scaling(X_train=self.X_train,
-                                               X_additional=self.X_val,
-                                               choice=params.SCALING_SCHEME)
+        scaled_X_train = self.X_train
+        scaled_X_val = self.X_val
 
         model.fit(scaled_X_train, self.y_train, overwrite_warning=True)
         preds = model.predict(scaled_X_val)
@@ -470,9 +617,8 @@ class ModelsManager:
 
         model = TabPFNClassifier(device=device, N_ensemble_configurations=int(best_hopt['N_ensemble_configurations']))
 
-        scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
-                                                X_additional=self.X_test,
-                                                choice=params.SCALING_SCHEME)
+        scaled_X_train = self.post_opt_X_train
+        scaled_X_test = self.X_test
 
         model.fit(scaled_X_train, self.post_opt_y_train, overwrite_warning=True)
         preds = model.predict(scaled_X_test)
@@ -573,83 +719,6 @@ class ModelsManager:
         preds, probs = self.tab_net_out_of_sample_test(best_hopt=best_hopt)
         merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + 'pobs_preds.csv')
 
-    # == AutoGluon Optimization === #
-    def auto_gluon_out_of_sample_test(self):
-        self.post_opt_X_train = self.X_train
-        self.post_opt_y_train = self.y_train
-        self.post_opt_X_train, self.post_opt_y_train = shuffle(self.post_opt_X_train, self.post_opt_y_train)
-
-        _, scaled_X_val = scaling(X_train=self.post_opt_X_train,
-                                  X_additional=self.X_val,
-                                  choice=params.SCALING_SCHEME)
-
-        scaled_X_train, scaled_X_test = scaling(X_train=self.post_opt_X_train,
-                                                X_additional=self.X_test,
-                                                choice=params.SCALING_SCHEME)
-
-        train_df = pd.concat([pd.DataFrame(scaled_X_train), pd.Series(self.post_opt_y_train)], axis=1)
-        val_df = pd.concat([pd.DataFrame(scaled_X_val), pd.Series(self.y_val)], axis=1)
-        test_df = pd.DataFrame(scaled_X_test)
-        test_df_labelled = pd.concat([pd.DataFrame(scaled_X_test), pd.Series(self.y_test)], axis=1)
-
-        labels_names = []
-        for i in range(0, scaled_X_train.shape[1]):
-            labels_names.append(str(i))
-        labels_names.append('label')
-
-        train_df.columns = labels_names
-        val_df.columns = labels_names
-        test_df.columns = labels_names[:-1]
-        test_df_labelled.columns = labels_names
-
-        label = 'label'
-        #hyperparameter_tune_kwargs = {
-        #    'scheduler': 'local',
-        #    'searcher': 'auto',
-        #}
-        model = TabularPredictor(label=label,
-                                 eval_metric='f1_macro',
-                                 path=f'{self.root_folder}models_specifics/', verbosity=0).fit(train_df,
-                                                                                               tuning_data=val_df,
-                                                                                               time_limit=self.dataset_time_mapping[str(self.dataset_id)],
-                                                                                               num_cpus=4,
-                                                                                               #hyperparameter_tune_kwargs=hyperparameter_tune_kwargs
-                                                                                               hyperparameters=None,
-                                                                                               )
-
-        # Get the performances of all the models.
-        all_models = model.get_model_names()
-        models_performance_list = {}
-        for m in all_models:
-            specific_model = model._trainer.load_model(m)
-            local_preds = specific_model.predict(test_df)
-            local_probs = specific_model.predict_proba(test_df)
-            score = f1_score(self.y_test, local_preds, average='macro')
-            models_performance_list[m] = (np.array(local_preds), np.array(local_probs), score)
-
-        # Remove duplicate models based on their name.
-        grouped_dict = {key.split('/')[0]: [] for key in models_performance_list}
-        for key in models_performance_list:
-            grouped_dict[key.split('/')[0]].append(key)
-
-        filtered_dict = {max(grouped_dict[key], key=lambda x: models_performance_list[x][2]): models_performance_list[max(grouped_dict[key], key=lambda x: models_performance_list[x][2])] for key in grouped_dict}
-        filtered_dict = {key.split('/')[0]: value for key, value in filtered_dict.items()}
-
-        model.delete_models(models_to_keep='best', dry_run=False, allow_delete_cascade=True)
-        root_dir = f'{self.root_folder}models_specifics/'
-        delete_empty_subdirectories(root_dir)
-
-        return filtered_dict
-
-    def auto_gluon_manager(self):
-        self.root_folder = f'./Homological_FS/AutoGluonClassifier/Dataset_{self.dataset_id}/Seed_{self.seed}/'
-        generate_folder_structure(self.root_folder)
-
-        dict_preds_probs = self.auto_gluon_out_of_sample_test()
-        for key in dict_preds_probs:
-            preds, probs, score = dict_preds_probs[key]
-            merge_probs_preds_classification(probs, preds, self.y_test, self.root_folder + f'{key}_pobs_preds.csv')
-
     # === Homological Convolutional Neural Network Optimization === #
 
     def hcnn_net_objective(self, optimization_parameters):
@@ -684,6 +753,7 @@ class ModelsManager:
                          root_folder=self.root_folder+'hyperopt/',
                          filtering_type=filtering_type,
                          dropout_rate=dropout_rate,
+                         seed=self.seed,
                          )
 
             model.data_preparation_pipeline()
@@ -697,8 +767,8 @@ class ModelsManager:
 
     @measure_execution_time
     def hcnn_net_optimize(self, trial):
-        optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4), # 4, 16, 4
-                                   'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 4), # 32, 64, 8
+        optimization_parameters = {'n_filters_l1': hp.quniform('n_filters_l1', 4, 16, 4),
+                                   'n_filters_l2': hp.quniform('n_filters_l2', 32, 64, 4),
                                    'tmfg_iterations': hp.quniform('tmfg_iterations', 100, 1000, 300),
                                    'tmfg_confidence': hp.choice('tmfg_confidence', self.tmfg_pvalues_options),
                                    'tmfg_similarity': hp.choice('tmfg_similarity', self.tmfg_similarities_options),
@@ -724,6 +794,8 @@ class ModelsManager:
         local_y_val = self.y_val.copy()
         local_y_test = self.y_test.copy()
 
+        print(f"Best Hyperparameters: {self.filtering_options[best_hopt['filtering_type']]} | {self.tmfg_pvalues_options[best_hopt['tmfg_confidence']]}")
+
         model = HCNN(X_train=local_X_train,
                      X_val=local_X_val,
                      X_test=local_X_test,
@@ -733,11 +805,12 @@ class ModelsManager:
                      n_filters_l1=int(best_hopt['n_filters_l1']),
                      n_filters_l2=int(best_hopt['n_filters_l2']),
                      tmfg_repetitions=int(best_hopt['tmfg_iterations']),
-                     tmfg_confidence=best_hopt['tmfg_confidence'],
+                     tmfg_confidence=self.tmfg_pvalues_options[best_hopt['tmfg_confidence']],
                      tmfg_similarity=self.tmfg_similarities_options[best_hopt['tmfg_similarity']],
                      root_folder=self.root_folder+'out_of_sample/',
-                     filtering_type=best_hopt['filtering_type'],
+                     filtering_type=self.filtering_options[best_hopt['filtering_type']],
                      dropout_rate=self.dropout_options[best_hopt['dropout_rate']],
+                     seed=self.seed,
                      )
 
         model.data_preparation_pipeline()

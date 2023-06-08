@@ -33,11 +33,7 @@ def convert_to_string(array):
 
 
 def merge_probs_preds_classification(array1, array2, targets, filename):
-    try:
-        classes = convert_to_string(np.arange(0, array1.shape[1]))
-    except:
-        classes = ['Class_0', 'Class_1']
-        array1 = np.array([array1, 1-array1]).T
+    classes = convert_to_string(np.arange(0, array1.shape[1]))
     df1 = pd.DataFrame(array1, columns=classes)
     df2 = pd.DataFrame(array2, columns=['Pred'])
     df3 = pd.DataFrame(targets, columns=['Target'])
@@ -58,22 +54,17 @@ def update_keys(d):
 
 
 def scaling(X_train, X_additional, choice):
-    if choice == 'Standard_Scaling':
+    if choice == 'StandardScaler':
         scaler = StandardScaler()
         scaler.fit(X_train)
         X_train = scaler.transform(X_train)
         X_additional = scaler.transform(X_additional)
-    elif choice == 'MinMax_Scaling':
+    elif choice == 'MinMaxScaler':
         scaler = MinMaxScaler()
         scaler.fit(X_train)
         X_train = scaler.transform(X_train)
         X_additional = scaler.transform(X_additional)
-    elif choice == 'MaxAbs_Scaling':
-        scaler = MaxAbsScaler()
-        scaler.fit(X_train)
-        X_train = scaler.transform(X_train)
-        X_additional = scaler.transform(X_additional)
-    elif choice == 'Robust_Scaling':
+    elif choice == 'RobustScaler':
         scaler = RobustScaler()
         scaler.fit(X_train)
         X_train = scaler.transform(X_train)

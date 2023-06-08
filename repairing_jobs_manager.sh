@@ -1,6 +1,6 @@
 #$ -l tmem=2G
 #$ -l h_vmem=2G
-#$ -l h_rt=24:00:00
+#$ -l h_rt=48:00:00
 #$ -R y
 #$ -pe smp 8
 
@@ -9,7 +9,7 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N HCNN
-#$ -t 1-2
+#$ -t 1-1
 
 hostname
 date
@@ -24,6 +24,7 @@ index="`sed -n ${number}p $paramfile | awk '{print $1}'`"
 variable1="`sed -n ${number}p $paramfile | awk '{print $2}'`"
 variable2="`sed -n ${number}p $paramfile | awk '{print $3}'`"
 variable3="`sed -n ${number}p $paramfile | awk '{print $4}'`"
+
 
 echo $variable1
 echo $variable2

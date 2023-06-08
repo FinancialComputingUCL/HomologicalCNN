@@ -366,13 +366,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_conv_triangles = nn.Sequential(
@@ -380,13 +380,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -394,17 +394,17 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
-                nn.Linear(in_features=(FILTERS_L2 * 3), out_features=last_layer_neurons),
+                nn.Linear(in_features=(FILTERS_L2 * 3), out_features=last_layer_neurons)
             )
 
         elif (self.NF_4 is None) and (self.NF_3 is not None) and (self.NF_2 is not None):
@@ -414,13 +414,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -428,13 +428,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
@@ -448,13 +448,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
@@ -467,13 +467,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
@@ -486,13 +486,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_conv_simplex = nn.Sequential(
@@ -500,13 +500,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=2,
                           stride=2),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_2 / 2))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
@@ -519,13 +519,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
@@ -538,13 +538,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=4,
                           stride=4),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_4 / 4))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_conv_triangles = nn.Sequential(
@@ -552,13 +552,13 @@ class HCNN_model1D(LightningModule):
                           out_channels=FILTERS_L1,
                           kernel_size=3,
                           stride=3),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
                 nn.Conv1d(in_channels=FILTERS_L1,
                           out_channels=FILTERS_L2,
                           kernel_size=(int(NF_3 / 3))),
-                nn.Dropout(p=self.dropout_rate),
-                nn.ReLU6(),
+                nn.Dropout1d(p=self.dropout_rate),
+                nn.ReLU(),
             )
 
             self.logic_mlp = nn.Sequential(
