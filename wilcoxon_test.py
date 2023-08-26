@@ -196,7 +196,7 @@ def graph_ranks(avranks, names, p_values, cd=None, cdmethod=None, lowv=None, hig
     def filter_names(name):
         return name
 
-    space_between_names = 0.24
+    space_between_names = 0.26
 
     for i in range(math.ceil(k / 2)):
         chei = cline + minnotsignificant + i * space_between_names
@@ -205,8 +205,8 @@ def graph_ranks(avranks, names, p_values, cd=None, cdmethod=None, lowv=None, hig
               (textspace - 0.1, chei)],
              linewidth=linewidth)
         if labels:
-            text(textspace + 0.3, chei - 0.075, format(ssums[i], '.4f'), ha="right", va="center", size=10)
-        text(textspace - 0.2, chei, filter_names(nnames[i]), ha="right", va="center", size=16)
+            text(textspace + 0.25, chei - 0.075, format(ssums[i], '.3f'), ha="right", va="center", size=13)
+        text(textspace - 0.25, chei, filter_names(nnames[i]), ha="right", va="center", size=16)
 
     for i in range(math.ceil(k / 2), k):
         chei = cline + minnotsignificant + (k - i - 1) * space_between_names
@@ -215,8 +215,8 @@ def graph_ranks(avranks, names, p_values, cd=None, cdmethod=None, lowv=None, hig
               (textspace + scalewidth + 0.1, chei)],
              linewidth=linewidth)
         if labels:
-            text(textspace + scalewidth - 0.3, chei - 0.075, format(ssums[i], '.4f'), ha="left", va="center", size=10)
-        text(textspace + scalewidth + 0.2, chei, filter_names(nnames[i]),
+            text(textspace + scalewidth - 0.25, chei - 0.075, format(ssums[i], '.3f'), ha="left", va="center", size=13)
+        text(textspace + scalewidth + 0.25, chei, filter_names(nnames[i]),
              ha="left", va="center", size=16)
 
     # no-significance lines
@@ -289,7 +289,7 @@ def draw_cd_diagram(df_perf=None, alpha=0.01, title=None, labels=False):
 
 
     graph_ranks(average_ranks.values, average_ranks.keys(), p_values,
-                cd=None, reverse=True, width=12, textspace=2.5, labels=labels)
+                cd=None, reverse=True, width=15, textspace=3, labels=labels)
 
     font = {'family': 'sans-serif',
         'color':  'black',
@@ -298,7 +298,7 @@ def draw_cd_diagram(df_perf=None, alpha=0.01, title=None, labels=False):
         }
     if title:
         plt.title(title,fontdict=font, y=0.9, x=0.5)
-    plt.savefig('cd-diagram.png',bbox_inches='tight')
+    plt.savefig('cd-diagram.pdf', bbox_inches='tight', dpi=500)
 
 def wilcoxon_holm(alpha=0.05, df_perf=None):
     """

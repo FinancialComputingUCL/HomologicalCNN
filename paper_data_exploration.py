@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import csv
 
-datasets = [361055, 361060, 361061, 361062, 361278]#[11, 1462, 1464, 18, 37, 15, 54, 40994, 1063, 1068, 40982, 1510, 1049, 1050, 1494, 22, 16, 458, 14]
+datasets = [361055, 361062, 361063, 361065, 361066, 361275, 361276, 361277, 361278]#[11, 1462, 1464, 18, 37, 15, 54, 40994, 1063, 1068, 40982, 1510, 1049, 1050, 1494, 22, 16, 458, 14]
 datasets_dict_features = {}
 datasets_dict_samples = {}
 
 for dataset in datasets:
     local_df = pd.read_csv(f'./data/{dataset}/X.csv')
+    print(local_df.dtypes)
     datasets_dict_features[dataset] = local_df.shape[1]
     datasets_dict_samples[dataset] = local_df.shape[0]
 
