@@ -104,23 +104,11 @@ def h_input_transform(X_train, X_val, X_test, y_train, y_val, y_test, tmfg_repet
         if len(i) == 4:
             b_cliques_4.append(sorted(i))
 
-    final_b_cliques_4 = []
+    final_b_cliques_4 = b_cliques_4
 
-    for c in cliques:
-        if sorted(c) in b_cliques_4:
-            final_b_cliques_4.append(sorted(c))
+    final_b_cliques_3 = b_cliques_3
 
-    final_b_cliques_3 = []
-
-    for c in separators:
-        if sorted(c) in b_cliques_3:
-            final_b_cliques_3.append(sorted(c))
-
-    final_b_cliques_2 = []
-
-    for c in simplexes:
-        if sorted(c) in b_cliques_2:
-            final_b_cliques_2.append(sorted(c))
+    final_b_cliques_2 = b_cliques_2
 
     # Uncomment to prevent overlapping geometrical structures.
     '''
